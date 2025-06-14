@@ -2,7 +2,7 @@
 ###### *Working title, don't sue pls
 An ~~abomination~~ adaptation of [OpenFIRE Firmware](https://github.com/TeamOpenFIRE/OpenFIRE-Firmware) for use as a macro pad/DIY Stream Deck.
 
-Layout is built around a 4x3 matrix with a display and two extra keys below for pagination - [reference model used for build (Macro Keypad by stink2290)]
+Layout is built around a 4x3 matrix with a display and two extra keys below for pagination - [reference model used for build (Macro Keypad by stink2290)](https://www.thingiverse.com/thing:5166594)
 
 Features:
  - Not based on Python
