@@ -3,7 +3,7 @@
  * @brief PicoDeck preferences loading/saving.
  *
  * @copyright That One Seong, 2025
- * @copyright GNU Lesser General Public License
+ * @copyright GNU General Public License
  *
  * @author [That One Seong](SeongsSeongs@gmail.com)
  * @date 2025

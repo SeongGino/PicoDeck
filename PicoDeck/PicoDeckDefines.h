@@ -3,7 +3,7 @@
  * @brief Global precompiler definitions & build options for the PicoDeck project.
  *
  * @copyright That One Seong, 2025
- * @copyright GNU Lesser General Public License
+ * @copyright GNU General Public License
  */ 
 
 #pragma once

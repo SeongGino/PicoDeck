@@ -2,8 +2,8 @@
  * @file PicoDeck.h
  * @brief PicoDeck main control program.
  *
- * @copyright That One Seong, https://github.com/SeongGino, 2025
- * @copyright GNU Lesser General Public License
+ * @copyright That One Seong, 2025
+ * @copyright GNU General Public License
  *
  * @author [That One Seong](SeongsSeongs@gmail.com)
  * @date 2025
@@ -14,13 +14,10 @@
 #include "PicoDeckDefines.h"
 #include "PicoDeckCommon.h"
 #include "PicoDeckDisplay.h"
-#include "PicoDeckPrefs.h"
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <LightgunButtons.h>
 #include <Adafruit_NeoPixel.h>
-#include <TinyUSB_Devices.h>
 // include TinyUSB or HID depending on USB stack option
 #if defined(USE_TINYUSB)
 #include <Adafruit_TinyUSB.h>
@@ -39,6 +36,12 @@
 /// @param      bool
 ///             Set true to fill pixel array from pixel
 void PixelUpdate(const int &r, const int &g, const int &b, const int &pixel, const bool &fill = false);
+
+enum FifoCmds_e {
+    DISP_BTN_UPDATE = 0,
+    //DISP_BTN_RELEASED = 1 << 24,
+    DISP_PAGE_UPDATE = 3 << 24
+};
 
 //// System/Devices
 // TinyUSB devices interface object that's initialized in MainCoreSetup
@@ -84,23 +87,3 @@ enum ButtonMask_e {
 
 // button combo to enter pause mode
 static inline constexpr uint32_t EnterPauseModeBtnMask = BtnMask_4 | BtnMask_8;
-
-// Button descriptor
-// The order of the buttons is the order of the button bitmask
-// must match ButtonIndex_e order, and the named bitmask values for each button
-// see LightgunButtons::Desc_t, format is: 
-// {pin, report code 1 (no modifiers), report code 2 (+CTRL), report code 3 (+SHIFT), debounce time, debounce mask}
-LightgunButtons::Desc_t LightgunButtons::ButtonDesc[] = {
-    {2,   KEY_F13,   KEY_F13,   KEY_F13},    {3,   KEY_F14,   KEY_F14,   KEY_F14},    {4,   KEY_F15,   KEY_F15,   KEY_F15},    {5,   KEY_F16,   KEY_F16,   KEY_F16},
-    {6,   KEY_F17,   KEY_F17,   KEY_F17},    {7,   KEY_F18,   KEY_F18,   KEY_F18},    {8,   KEY_F19,   KEY_F19,   KEY_F19},    {9,   KEY_F20,   KEY_F20,   KEY_F20},
-    {10,  KEY_F21,   KEY_F21,   KEY_F21},    {11,  KEY_F22,   KEY_F22,   KEY_F22},    {12,  KEY_F23,   KEY_F23,   KEY_F23},    {13,  KEY_F24,   KEY_F24,   KEY_F24},
-    {14,  LGB_PREV,  LGB_PREV,  LGB_PREV},   {15,  LGB_NEXT,  LGB_NEXT,  LGB_NEXT}
-};
-
-// button count constant
-constexpr unsigned int ButtonCount = sizeof(LightgunButtons::ButtonDesc) / sizeof(LightgunButtons::ButtonDesc[0]);
-
-// button runtime data arrays
-LightgunButtonsStatic<ButtonCount> lgbData;
-
-LightgunButtons buttons(lgbData, ButtonCount);

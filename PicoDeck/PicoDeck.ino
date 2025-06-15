@@ -7,8 +7,8 @@
  * Yes, I am an insane human being.
  * Somehow this is all Cynthia's fault.
  *
- * @copyright That One Seong, https://github.com/SeongGino, 2025
- * @copyright GNU Lesser General Public License
+ * @copyright That One Seong, 2025
+ * @copyright GNU General Public License
  *
  * @author [That One Seong](SeongsSeongs@gmail.com)
  * @date 2025
@@ -20,6 +20,11 @@ void setup()
 {
     // wait for signal from Core1, which should be after prefs have loaded
     rp2040.fifo.pop();
+
+    // In case some I2C devices deadlock the program
+    // (can happen due to bad pin mappings)
+    Wire.setTimeout(100);
+    Wire1.setTimeout(100);
 
     if(OLED.Begin(DISP_SCL, DISP_SDA, Adafruit_MultiDisplay::I2C_SSD1306) == false) {
         // Does this ever actually happen...?
@@ -36,10 +41,6 @@ void setup1()
     Serial.setTimeout(0);
     delay(1000);
     #endif // SERIAL_DEBUG
-
-    // lazy
-    for(int i = 0; i < sizeof(Sega7x7_InvertedBitmaps); ++i)
-        Sega7x7_InvertedBitmaps[i] = ~Sega7x7_InvertedBitmaps[i];
 
     // Initializes TinyUSB identifier
     // Values are pulled from EEPROM values that were loaded earlier in setup()
@@ -71,22 +72,28 @@ void setup1()
 }
 
 void loop() {
-    // In case some I2C devices deadlock the program
-    // (can happen due to bad pin mappings)
-    Wire.setTimeout(100);
-    Wire1.setTimeout(100);
-    // TODO: use for updating lights and/or I2C display?
+    if(OLED.display != nullptr)
+        OLED.IdleOps();
+
+    if(rp2040.fifo.pop_nb(&fifoData)) switch(fifoData & 0xFF000000) {
+        case DISP_BTN_UPDATE: if(OLED.display != nullptr) OLED.ButtonsUpdate(fifoData); break;
+        case DISP_PAGE_UPDATE:  if(OLED.display != nullptr) OLED.PageUpdate(fifoData & 0x000000FF); break;
+        default: break;
+    }
 }
 
 void loop1() {
     buttons.Poll(0);
 
-#ifdef SERIAL_DEBUG
-    if(buttons.pressed) for(int i = 0; i < ButtonCount; ++i) {
-        if(buttons.pressed & 1 << i)
+    if(buttons.pressed) {
+        rp2040.fifo.push(buttons.pressed);
+        #ifdef SERIAL_DEBUG
+        for(int i = 0; i < ButtonCount; ++i) if(buttons.pressed & 1 << i)
             Serial.printf("Pressed Button %d (Key: %d)\n", i+1, *&LightgunButtons::ButtonDesc[i].reportCode+buttons.page);
+        #endif // SERIAL_DEBUG
     }
-#endif // SERIAL_DEBUG
+    if(buttons.released)
+        rp2040.fifo.push(buttons.released);
 
     if(millis() - lastUSBpoll >= POLL_RATE) {
         lastUSBpoll = millis();
@@ -95,14 +102,15 @@ void loop1() {
 
     if(buttons.page != DeckCommon::Prefs->curPage) {
         DeckCommon::Prefs->curPage = buttons.page;
+        rp2040.fifo.push(buttons.page | DISP_PAGE_UPDATE);
         #ifdef SERIAL_DEBUG
         Serial.printf("Switched to page %d\n", DeckCommon::Prefs->curPage+1);
         #endif // SERIAL_DEBUG
         switch(DeckCommon::Prefs->curPage) {
-        case 0:  PixelUpdate(255, 0, 0, 0, true); break;
-        case 1:  PixelUpdate(0, 255, 0, 0, true); break;
-        case 2:  PixelUpdate(0, 0, 255, 0, true); break;
-        default: break;
+            case 0: PixelUpdate(255, 0, 0, 0, true); break;
+            case 1: PixelUpdate(0, 255, 0, 0, true); break;
+            case 2: PixelUpdate(0, 0, 255, 0, true); break;
+            default: break;
         }
         
         canSave = true;

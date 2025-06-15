@@ -1,9 +1,9 @@
 /*!
  * @file PicoDeckDisplay.h
- * @brief Wrapper interface for Adafruit_SSD1306 to display Macros interface.
+ * @brief Wrapper interface for many OLED display drivers to render Macros interface.
  *
  * @copyright That One Seong, 2025
- * @copyright GNU Lesser General Public License
+ * @copyright GNU General Public License
  */
 
 #pragma once
@@ -13,6 +13,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_SH110X.h>
 #include "fontSega7x7.h"
+#include "PicoDeckDefines.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -73,15 +74,21 @@ public:
     }
 
     void display() {
+        #ifdef SERIAL_DEBUG
+        unsigned long preDispTS = millis();
+        #endif // SERIAL_DEBUG
         switch(dispType) {
             case I2C_SSD1306:
-                return display1306->display();
+                display1306->display(); break;
             case I2C_SH1106:
-                return display1106->display();
+                display1106->display(); break;
             case I2C_SH1107:
-                return display1107->display();
+                display1107->display(); break;
             default: break;
         }
+        #ifdef SERIAL_DEBUG
+        Serial.printf("Display() took %d ms\n", millis() - preDispTS);
+        #endif // SERIAL_DEBUG
     }
 
     void invertDisplay(const bool &i) {
@@ -323,6 +330,30 @@ public:
             default: return 0;
         }
     }
+
+    bool getPixel(const int16_t &x, const int16_t &y) {
+        switch(dispType) {
+            case I2C_SSD1306:
+                return display1306->getPixel(x, y);
+            case I2C_SH1106:
+                return display1106->getPixel(x, y);
+            case I2C_SH1107:
+                return display1107->getPixel(x, y);
+            default: return false;
+        }
+    }
+
+    void getTextBounds(const char *str, const int16_t &x, const int16_t &y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
+        switch(dispType) {
+            case I2C_SSD1306:
+                display1306->getTextBounds(str, x, y, x1, y1, w, h); break;
+            case I2C_SH1106:
+                display1106->getTextBounds(str, x, y, x1, y1, w, h); break;
+            case I2C_SH1107:
+                display1107->getTextBounds(str, x, y, x1, y1, w, h); break;
+            default: break;
+        }
+    }
 };
 
 class DeckDisplay {
@@ -344,9 +375,9 @@ public:
 
     /// @brief Update top panel with either a string of 22 characters, or a combination of text prefix and a profile name
     /// @details Prefix should only have up to seven characters, to prevent the profile name being cutoff
-    void TopPanelUpdate(const char *prefix, const char *name = nullptr);
+    void TopPanelUpdate(const char *mainText, const char *subText = nullptr);
 
-    /// @brief Clear screen for different gun modes
+    /// @brief Clear screen for different operational states
     void ScreenModeChange(const ScreenMode_e &screenMode);
 
     /// @brief Perform maintenance operations (WIP)
@@ -354,17 +385,39 @@ public:
     /// (i.e. small text printouts when health/ammo empty)
     void IdleOps();
 
+    void TopPanelScroll();
+
+    void ButtonsUpdate(const uint32_t &btnsMap);
+
+    void PageUpdate(const uint32_t &page);
+
     Adafruit_MultiDisplay *display = nullptr;
 
 private:
     bool altAddr = false;
 
+    bool screenUpdated = false;
+
     ScreenMode_e screenState = Screen_Default;
 
-    #define OLED_IDLEUPD_INTERVAL 5000
+    // canvas objects for the top banner's main and subtext (scrolling)
+    GFXcanvas1 topBannerBufMain = GFXcanvas1(128, 15);
+    GFXcanvas1 topBannerBufSub = GFXcanvas1(128, 15);
+    uint8_t topBannerBackupBitmap[((128+7) >> 3) * 15];
+
+    // singleton canvas for keybox objects, and all-in-one buffer for all 12 available keys
+    GFXcanvas1 keyBoxBuf = GFXcanvas1(31, 16);
+    uint8_t keyBoxBitmaps[4*3][((31+7) >> 3) * 16];
+
+    #define OLED_IDLE_INTERVAL 16
 
     // timestamps for periodic tasks in IdleOps()
     unsigned long idleTimeStamp = 0;
+
+    int topBannX;
+    bool topBannScrolling = false;
+    unsigned long lastScrollTimestamp = 0;
+    #define OLED_SCROLL_INTERVAL 5000
 
     //// Graphics
     #define DIVIDER_WIDTH 1
@@ -412,5 +465,233 @@ private:
         0x00, 0x07, 0xfb, 0xdf, 0xe0, 0x00, 0x00, 0x03, 0xff, 0xff, 0xc0, 0x00, 0x00, 0x00, 0xff, 0xff, 
         0x00, 0x00, 0x00, 0x00, 0x0f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x03, 0xc0, 0x00, 0x00, 0x00, 0x00, 
         0x03, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x03, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x03, 0xc0, 0x00, 0x00
+    };
+
+    // should always be added by 0x20
+    static inline const char *keyStrings[] = {
+        "   ", // 0x20 - space
+        " ! ",
+        " \" ",
+        " # ",
+        " $ ",
+        " % ",
+        " & ",
+        " ' ",
+        " ( ",
+        " ) ",
+        " * ",
+        " + ",
+        " , ",
+        " - ",
+        " . ",
+        " / ",
+        "#0 ",
+        "#1 ",
+        "#2 ",
+        "#3 ",
+        "#4 ",
+        "#5 ",
+        "#6 ",
+        "#7 ",
+        "#8 ",
+        "#9 ",
+        " : ",
+        " ; ",
+        " < ",
+        " = ",
+        " > ",
+        " ? ",
+        " @ ",
+        " A ",
+        " B ",
+        " C ",
+        " D ",
+        " E ",
+        " F ",
+        " G ",
+        " H ",
+        " I ",
+        " J ",
+        " K ",
+        " L ",
+        " M ",
+        " N ",
+        " O ",
+        " P ",
+        " Q ",
+        " R ",
+        " S ",
+        " T ",
+        " U ",
+        " V ",
+        " W ",
+        " X ",
+        " Y ",
+        " Z ",
+        " [ ",
+        " \\ ",
+        " ] ",
+        " ^ ",
+        " _ ",
+        " ` ",
+        " a ",
+        " b ",
+        " c ",
+        " d ",
+        " e ",
+        " f ",
+        " g ",
+        " h ",
+        " i ",
+        " j ",
+        " k ",
+        " l ",
+        " m ",
+        " n ",
+        " o ",
+        " p ",
+        " q ",
+        " r ",
+        " s ",
+        " t ",
+        " u ",
+        " v ",
+        " w ",
+        " x ",
+        " y ",
+        " z ",
+        " { ",
+        " | ",
+        " } ",
+        " ~ ",
+        "   ", // 0x7F - last ASCII printable
+        "CTRL",// 0x80 - left modifiers
+        "SHFT",
+        "ALT",
+        "META",
+        "CTRL",// 0x84 - right modifiers
+        "SHFT",
+        "ALT",
+        "META",
+        "",    // 0x88 - nothing
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",    // 0x90
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",    // 0xA0
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "ENTR",    // 0xB0 - Return/Enter
+        "ESC",
+        "RUB",
+        "TAB",
+        "",        // 0xB4 - nothing
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",        // 0xC0
+        "CAPS",    // 0xC1 - caps lock
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
+        "F10",
+        "F11",
+        "F12",
+        "",       // 0xCE
+        "",
+        "",       // 0xD0
+        "INS",    // 0xD1 - insert
+        "",
+        "PgUp",
+        "DEL",
+        "END",
+        "PgDn",   // 0xD6 - page down
+        "Rght",
+        "Left",
+        "Dwn",
+        "Up",     // 0xDA - Up Arrow
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",       // 0xE0
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "F13",    // 0xF0 - F13
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F19",
+        "F20",
+        "F21",
+        "F22",
+        "F23",
+        "F24",    // 0xFB - F24
+        "",
+        "",
+        "",
+        ""
     };
 };
