@@ -104,6 +104,21 @@ public:
         }
     }
 
+    // only SSD1306 has a predefined dim function (which sets contrast to 0x8F), with no public "set contrast" method
+    void dim(const bool &dim) {
+        switch(dispType) {
+            case I2C_SSD1306:
+                display1306->dim(dim); break;
+            case I2C_SH1106:
+                display1106->setContrast(dim ? 0x2F : 0xFF);
+                break;
+            case I2C_SH1107:
+                display1107->setContrast(dim ? 0x2F : 0x4F);
+                break;
+            default: break;
+        }
+    }
+
     void cp437(const bool &x) {
         switch(dispType) {
             case I2C_SSD1306:
@@ -422,6 +437,11 @@ private:
 
     // timestamps for periodic tasks in IdleOps()
     unsigned long idleTimestamp = 0;
+
+    // OLED dimmer (defaults to ~30min)
+    bool oledDimmed = false;
+    unsigned long timeoutTimestamp = 0;
+    #define OLED_TIMEOUT 1800000
 
     int topBannX;
     bool topBannScrolling = false;

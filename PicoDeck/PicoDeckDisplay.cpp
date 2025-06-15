@@ -124,8 +124,11 @@ void DeckDisplay::ScreenModeChange(const ScreenMode_e &screenMode)
         display->display();
         screenUpdated = false;
         topBannUpdated = false;
+        // constitutes a wakeup
+        if(oledDimmed) display->dim(false);
+        oledDimmed = false;
+        timeoutTimestamp = millis();
     }
-    
 }
 
 void DeckDisplay::IdleOps()
@@ -177,6 +180,11 @@ void DeckDisplay::IdleOps()
             display->display();
             screenUpdated = false;
             topBannUpdated = false;
+        }
+
+        if(!oledDimmed && millis() - timeoutTimestamp > OLED_TIMEOUT) {
+            display->dim(true);
+            oledDimmed = true;
         }
     }
 }
@@ -230,6 +238,10 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
             ++y;
         }
     }
+    // constitutes a wakeup
+    if(oledDimmed) display->dim(false);
+    oledDimmed = false;
+    timeoutTimestamp = millis();
 }
 
 void DeckDisplay::PageUpdate(const uint32_t &page)
@@ -287,6 +299,10 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
     }
 
     screenUpdated = true;
+    // constitutes a wakeup
+    if(oledDimmed) display->dim(false);
+    oledDimmed = false;
+    timeoutTimestamp = millis();
 }
 
 void DeckDisplay::SaveUpdate(uint32_t save)
