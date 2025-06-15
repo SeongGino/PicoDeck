@@ -14,6 +14,7 @@
 #include <Adafruit_SH110X.h>
 #include "fontSega7x7.h"
 #include "PicoDeckDefines.h"
+#include "PicoDeckCommon.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -359,6 +360,7 @@ public:
 class DeckDisplay {
 public:
     enum ScreenMode_e {
+        Screen_Init = -1,
         Screen_Default = 0,
         Screen_Saving,
         Screen_SaveSuccess,
@@ -368,10 +370,6 @@ public:
     /// @brief Verifies display pins validity to pass to display constructor, then starts up the display
     /// @return success (true) or fail (false)
     bool Begin(const int &scl, const int &sda, const Adafruit_MultiDisplay::ScreenType_e &displayType);
-
-    /// @brief Cleanup and delete current OLED object
-    /// @details This is needed to ensure the wire object is cleaned up
-    void Stop();
 
     /// @brief Update top panel with either a string of 22 characters, or a combination of text prefix and a profile name
     /// @details Prefix should only have up to seven characters, to prevent the profile name being cutoff
@@ -391,14 +389,25 @@ public:
 
     void PageUpdate(const uint32_t &page);
 
+    void SaveUpdate(uint32_t save);
+
     Adafruit_MultiDisplay *display = nullptr;
 
 private:
-    bool altAddr = false;
+    ScreenMode_e screenState = Screen_Init;
 
+    // Set true when screen buffer has new contents to push to display
     bool screenUpdated = false;
+    bool topBannUpdated = false;
 
-    ScreenMode_e screenState = Screen_Default;
+    enum SavingTypes_e {
+        SAVE_STARTED = 0,
+        SAVE_FAILED,
+        SAVE_SUCCESSFUL
+    };
+
+    // TODO: should change library to check for ACKs from both 0x3C/0x3D
+    //bool altAddr = false;
 
     // canvas objects for the top banner's main and subtext (scrolling)
     GFXcanvas1 topBannerBufMain = GFXcanvas1(128, 15);
@@ -412,23 +421,21 @@ private:
     #define OLED_IDLE_INTERVAL 16
 
     // timestamps for periodic tasks in IdleOps()
-    unsigned long idleTimeStamp = 0;
+    unsigned long idleTimestamp = 0;
 
     int topBannX;
     bool topBannScrolling = false;
     unsigned long lastScrollTimestamp = 0;
     #define OLED_SCROLL_INTERVAL 5000
 
-    //// Graphics
-    #define DIVIDER_WIDTH 1
-    #define DIVIDER_HEIGHT 48
-    // if only we could draw this vertically, sigh
-    static constexpr uint8_t dividerLine[] = {
-        0x40, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 
-        0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 
-        0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x00
-    };
+    unsigned long saveResultTimestamp = 0;
+    #define OLED_SAVING_TIME 2000
+    // Set true when save glyph should be visible (either neutral, failed or success)
+    bool saving = false;
+    DeckPrefs::Errors_e saveResult = DeckPrefs::Error_None;
 
+    //// Graphics
+    // leftover openfire bits
     #define CUSTSPLASHBANN_WIDTH 80
     #define CUSTSPLASHBANN_HEIGHT 16
     static constexpr uint8_t customSplashBanner[] = {
@@ -465,6 +472,18 @@ private:
         0x00, 0x07, 0xfb, 0xdf, 0xe0, 0x00, 0x00, 0x03, 0xff, 0xff, 0xc0, 0x00, 0x00, 0x00, 0xff, 0xff, 
         0x00, 0x00, 0x00, 0x00, 0x0f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x03, 0xc0, 0x00, 0x00, 0x00, 0x00, 
         0x03, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x03, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x03, 0xc0, 0x00, 0x00
+    };
+
+    #define SAVEGLYPH_WIDTH  16
+    #define SAVEGLYPH_HEIGHT 14
+    static constexpr uint8_t saveGlyph[] = {
+        0xff, 0xe0, 0x91, 0xf0, 0x91, 0xe8, 0x91, 0xe4, 0x91, 0xe4, 0x9f, 0xe4, 0x80, 0x04, 0x80, 0x04, 
+	    0x80, 0x04, 0x9f, 0xe4, 0x90, 0x24, 0x97, 0xa4, 0x90, 0x24, 0xff, 0xfc
+    };
+
+    static constexpr uint8_t saveSuccessGlyph[] = {
+        0xff, 0xe0, 0x91, 0xf0, 0x91, 0xe8, 0x91, 0xe4, 0x91, 0xe4, 0x9f, 0xe5, 0x80, 0x03, 0x80, 0x86, 
+	    0x80, 0x4c, 0x9f, 0xb8, 0x90, 0x14, 0x97, 0xa4, 0x90, 0x24, 0xff, 0xfc
     };
 
     // should always be added by 0x20

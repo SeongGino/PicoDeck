@@ -18,14 +18,14 @@ DeckPrefs::DeckPrefs()
     else Load();
 }
 
-int DeckPrefs::InitFS()
+DeckPrefs::Errors_e DeckPrefs::InitFS()
 {
     if(LittleFS.begin())
         return Error_Success;
     else return Error_NoData;
 }
 
-int DeckPrefs::Load()
+DeckPrefs::Errors_e DeckPrefs::Load()
 {
     File prefsFile = LittleFS.open("/Prefs.conf", "r");
     if(prefsFile) {
@@ -35,7 +35,7 @@ int DeckPrefs::Load()
     } else return Error_NoData;
 }
 
-int DeckPrefs::Save()
+DeckPrefs::Errors_e DeckPrefs::Save()
 {
     File prefsFile = LittleFS.open("/Prefs.conf", "w");
     if(prefsFile) {

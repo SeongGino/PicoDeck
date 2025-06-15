@@ -72,14 +72,17 @@ void setup1()
 }
 
 void loop() {
-    if(OLED.display != nullptr)
-        OLED.IdleOps();
-
     if(rp2040.fifo.pop_nb(&fifoData)) switch(fifoData & 0xFF000000) {
-        case DISP_BTN_UPDATE: if(OLED.display != nullptr) OLED.ButtonsUpdate(fifoData); break;
-        case DISP_PAGE_UPDATE:  if(OLED.display != nullptr) OLED.PageUpdate(fifoData & 0x000000FF); break;
+        case DISP_BTN_UPDATE:  if(OLED.display != nullptr) OLED.ButtonsUpdate(fifoData); break;
+        case DISP_PAGE_UPDATE: if(OLED.display != nullptr) OLED.PageUpdate(fifoData & 0x000000FF); break;
+        case DECK_SAVING:
+            if(OLED.display != nullptr) OLED.SaveUpdate(fifoData & 0xFF);
+            break;
         default: break;
     }
+
+    if(OLED.display != nullptr)
+        OLED.IdleOps();
 }
 
 void loop1() {
@@ -117,12 +120,11 @@ void loop1() {
         lastSaveChecked = millis();
     }
 
-    if(millis() - lastSaveChecked >= SAVE_INTERVAL) {
-        lastSaveChecked = millis();
-        if(canSave) {
-            canSave = false;
-            DeckCommon::Prefs->Save();
-        }
+    if(canSave && millis() - lastSaveChecked >= SAVE_INTERVAL) {
+        canSave = false;
+        rp2040.fifo.push(DECK_SAVING);
+        DeckPrefs::Errors_e saveResult = DeckCommon::Prefs->Save();
+        rp2040.fifo.push(DECK_SAVING | saveResult+1);
     }
 }
 
