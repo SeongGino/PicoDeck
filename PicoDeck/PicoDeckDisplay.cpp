@@ -253,12 +253,12 @@ void DeckDisplay::TopPanelScroll()
 
 void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
 {
-    for(uint i = 0, b = 0, x = 0, y = 0; b < ButtonCount; ++b) {
+    for(int i = 0, b = 0, x = 0, y = 0; b < (int)ButtonCount; ++b) {
         if(LightgunButtons::ButtonDesc[b].reportCode < LightgunButtons::LGB_TYPES) continue;
 
         if(btnsMap & (1 << b)) {
             // invert btn bitmap
-            for(uint p = 0; p < sizeof(keyBoxBitmaps[i]); ++p)
+            for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
                 keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
 
             int xOffset = 32*x;
@@ -287,7 +287,7 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
 void DeckDisplay::PageUpdate(const uint32_t &page)
 {
     // reject page num if over amount of pages
-    if(page >= DeckCommon::Prefs->pagesCount) return;
+    if((int32_t)page >= DeckCommon::Prefs->pagesCount) return;
 
     display->fillScreen(BLACK);
 
@@ -296,7 +296,7 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
         sprintf(pageStr, "Page %d", (int)page+1);
     else sprintf(pageStr, "Page %d: %s", (int)page+1, DeckCommon::Prefs->pageNames.at(page));
 
-    if(page == DeckCommon::Prefs->pagesCount-1)
+    if((int32_t)page == DeckCommon::Prefs->pagesCount-1)
          TopPanelUpdate(pageStr, Align_Center, "<-Prev Page", Align_Left);
     else if(!page)
          TopPanelUpdate(pageStr, Align_Center, "Next Page ->", Align_Right);
@@ -308,7 +308,7 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
     //display->drawFastHLine(0, 31, 128, WHITE);
     //display->drawFastHLine(0, 47, 128, WHITE);
 
-    for(uint i = 0, b = 0, x = 0, y = 0; b < ButtonCount; ++b) {
+    for(int i = 0, b = 0, x = 0, y = 0; b < (int)ButtonCount; ++b) {
         if(LightgunButtons::ButtonDesc[b].reportCode < LightgunButtons::LGB_TYPES) continue;
 
         keyBoxBuf.fillScreen(BLACK);

@@ -35,7 +35,7 @@ public:
         "System Apps",
     };
 
-    uint pagesCount;
+    int pagesCount;
 
     /// @brief    Constructor
     DeckPrefs();
