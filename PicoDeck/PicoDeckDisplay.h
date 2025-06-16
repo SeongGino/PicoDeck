@@ -392,8 +392,7 @@ public:
     /// @return success (true) or fail (false)
     bool Begin(const int &scl, const int &sda, const Adafruit_MultiDisplay::ScreenType_e &displayType);
 
-    /// @brief Update top panel with either a string of 22 characters, or a combination of text prefix and a profile name
-    /// @details Prefix should only have up to seven characters, to prevent the profile name being cutoff
+    /// @brief Update top panel with primary and (optional) secondary text buffers with alignment options
     void TopPanelUpdate(const char *mainText, const PanelTextAlign_e &textAlign = Align_Left, const char *subText = nullptr, const PanelTextAlign_e &subAlign = Align_Left);
 
     /// @brief Clear screen for different operational states
@@ -404,28 +403,36 @@ public:
     /// (i.e. small text printouts when health/ammo empty)
     void IdleOps();
 
+    /// @brief Scrolls primary and secondary text buffers across the top banner by 1px per call
+    /// @details Should be called continuously until the second text buffer has reached its desired position
     void TopPanelScroll();
 
+    /// @brief Inverts and blits polled buttons' bitmaps' atop the current displayed inputs page
     void ButtonsUpdate(const uint32_t &btnsMap);
 
+    /// @brief Updates bindings based on the desired page, derived from LGB's Buttons Descriptor
     void PageUpdate(const uint32_t &page);
 
+    /// @brief Sets save status to be reported during IdleOps()
     void SaveUpdate(uint32_t save);
 
+    /// @brief Multiple displays wrapper singleton
+    /// @details Used to check validity of whether a display is active or not
     Adafruit_MultiDisplay *display = nullptr;
 
 private:
-    ScreenMode_e screenState = Screen_Init;
-
-    // Set true when screen buffer has new contents to push to display
-    bool screenUpdated = false;
-    bool topBannUpdated = false;
-
     enum SavingTypes_e {
         SAVE_STARTED = 0,
         SAVE_FAILED,
         SAVE_SUCCESSFUL
     };
+
+    /// @brief Current screen layout or mode being used
+    ScreenMode_e screenState = Screen_Init;
+
+    // Set true when screen buffer has new contents to push to display
+    bool screenUpdated = false;
+    bool topBannUpdated = false;
 
     // TODO: should change library to check for ACKs from both 0x3C/0x3D
     //bool altAddr = false;
@@ -439,10 +446,9 @@ private:
     GFXcanvas1 keyBoxBuf = GFXcanvas1(31, 16);
     uint8_t keyBoxBitmaps[4*3][((31+7) >> 3) * 16];
 
-    #define OLED_IDLE_INTERVAL 16
-
     // timestamps for periodic tasks in IdleOps()
     unsigned long idleTimestamp = 0;
+    #define OLED_IDLE_INTERVAL 16
 
     // OLED dimmer (defaults to ~30min)
     bool oledDimmed = false;
@@ -454,14 +460,14 @@ private:
     unsigned long lastScrollTimestamp = 0;
     #define OLED_SCROLL_INTERVAL 5000
 
-    unsigned long saveResultTimestamp = 0;
-    #define OLED_SAVING_TIME 2000
     // Set true when save glyph should be visible (either neutral, failed or success)
     bool saving = false;
+    unsigned long saveResultTimestamp = 0;
+    #define OLED_SAVING_TIME 2000
     DeckPrefs::Errors_e saveResult = DeckPrefs::Error_None;
 
     //// Graphics
-    // leftover openfire bits
+    // TODO: these are leftover openfire bits
     #define CUSTSPLASHBANN_WIDTH 80
     #define CUSTSPLASHBANN_HEIGHT 16
     static constexpr uint8_t customSplashBanner[] = {
@@ -512,7 +518,7 @@ private:
 	    0x80, 0x4c, 0x9f, 0xb8, 0x90, 0x14, 0x97, 0xa4, 0x90, 0x24, 0xff, 0xfc
     };
 
-    // should always be added by 0x20
+    // any method accessing this should always decrement the pointer by 0x20, which is where this map starts
     static inline const char *keyStrings[] = {
         "   ", // 0x20 - space
         " ! ",
