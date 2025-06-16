@@ -29,6 +29,14 @@ public:
         Error_None = 10
     };
 
+    std::vector<const char*> pageNames = {
+        "Avatar Actions",
+        "Scenes",
+        "System Apps",
+    };
+
+    uint pagesCount;
+
     /// @brief    Constructor
     DeckPrefs();
 

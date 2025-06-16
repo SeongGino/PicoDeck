@@ -124,7 +124,7 @@ void loop1() {
         canSave = false;
         rp2040.fifo.push(DECK_SAVING);
         DeckPrefs::Errors_e saveResult = DeckCommon::Prefs->Save();
-        rp2040.fifo.push(DECK_SAVING | saveResult+1);
+        rp2040.fifo.push(DECK_SAVING | (saveResult+1));
     }
 }
 

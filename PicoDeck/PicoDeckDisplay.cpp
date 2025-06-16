@@ -1,3 +1,4 @@
+#include "PicoDeckCommon.h"
 /*!
  * @file PicoDeckDisplay.cpp
  * @brief Wrapper interface for Adafruit_SSD1306 to display Macros interface.
@@ -78,6 +79,7 @@ void DeckDisplay::TopPanelUpdate(const char *mainText, const PanelTextAlign_e &t
         switch(textAlign) {
         case Align_Center: topBannerBufMain.setCursor(64-(w >> 1), 3+SEGAFONT7_HEIGHT); break;
         case Align_Right:  topBannerBufMain.setCursor(128-w, 3+SEGAFONT7_HEIGHT);       break;
+        default: break;
         }
         break;
     }
@@ -102,6 +104,7 @@ void DeckDisplay::TopPanelUpdate(const char *mainText, const PanelTextAlign_e &t
             switch(subAlign) {
             case Align_Center: topBannerBufSub.setCursor(64-(w >> 1), 3+SEGAFONT7_HEIGHT); break;
             case Align_Right:  topBannerBufSub.setCursor(128-w, 3+SEGAFONT7_HEIGHT);       break;
+            default: break;
             }
             break;
         }
@@ -194,8 +197,9 @@ void DeckDisplay::IdleOps()
                 if(millis() - saveResultTimestamp > OLED_SAVING_TIME) {
                     saving = false;
                     if(!topBannUpdated) {
-                        // clear dangling save glyph since it's finished
+                        // clear dangling save glyph since it's finished (and rerender top panel text)
                         display->fillRect(128-SAVEGLYPH_WIDTH, 0, SAVEGLYPH_WIDTH, SAVEGLYPH_HEIGHT, BLACK);
+                        display->drawBitmap(0, 0, topBannerBufMain.getBuffer(), topBannerBufMain.width(), topBannerBufMain.height(), WHITE);
                         screenUpdated = true;
                         topBannUpdated = true;
                     }
@@ -249,12 +253,12 @@ void DeckDisplay::TopPanelScroll()
 
 void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
 {
-    for(int i = 0, b = 0, x = 0, y = 0; b < ButtonCount; ++b) {
+    for(uint i = 0, b = 0, x = 0, y = 0; b < ButtonCount; ++b) {
         if(LightgunButtons::ButtonDesc[b].reportCode < LightgunButtons::LGB_TYPES) continue;
 
         if(btnsMap & (1 << b)) {
             // invert btn bitmap
-            for(int p = 0; p < sizeof(keyBoxBitmaps[i]); ++p)
+            for(uint p = 0; p < sizeof(keyBoxBitmaps[i]); ++p)
                 keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
 
             int xOffset = 32*x;
@@ -282,16 +286,21 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
 
 void DeckDisplay::PageUpdate(const uint32_t &page)
 {
+    // reject page num if over amount of pages
+    if(page >= DeckCommon::Prefs->pagesCount) return;
+
     display->fillScreen(BLACK);
 
-    // TODO: maybe the top panel updater should handle label centering itself?
-    char pageStr[8];
-    sprintf(pageStr, "Page %d", page+1);
-    switch(page) {
-    case 0:  TopPanelUpdate(pageStr, Align_Center, "Next Page ->", Align_Right); break;
-    case 2:  TopPanelUpdate(pageStr, Align_Center, "<-Prev Page", Align_Left); break;
-    default: TopPanelUpdate(pageStr, Align_Center, "<-Prev        Next->", Align_Center); break;
-    }
+    char pageStr[32];
+    if(DeckCommon::Prefs->pageNames.at(page)[0] == 0)
+        sprintf(pageStr, "Page %d", (int)page+1);
+    else sprintf(pageStr, "Page %d: %s", (int)page+1, DeckCommon::Prefs->pageNames.at(page));
+
+    if(page == DeckCommon::Prefs->pagesCount-1)
+         TopPanelUpdate(pageStr, Align_Center, "<-Prev Page", Align_Left);
+    else if(!page)
+         TopPanelUpdate(pageStr, Align_Center, "Next Page ->", Align_Right);
+    else TopPanelUpdate(pageStr, Align_Center, "<-Prev        Next->", Align_Center);
 
     //display->drawFastVLine(31, 16, 48, WHITE);
     //display->drawFastVLine(63, 16, 48, WHITE);
@@ -299,7 +308,7 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
     //display->drawFastHLine(0, 31, 128, WHITE);
     //display->drawFastHLine(0, 47, 128, WHITE);
 
-    for(int i = 0, b = 0, x = 0, y = 0; b < ButtonCount; ++b) {
+    for(uint i = 0, b = 0, x = 0, y = 0; b < ButtonCount; ++b) {
         if(LightgunButtons::ButtonDesc[b].reportCode < LightgunButtons::LGB_TYPES) continue;
 
         keyBoxBuf.fillScreen(BLACK);

@@ -16,6 +16,8 @@ DeckPrefs::DeckPrefs()
     if(InitFS() != Error_Success)
         Serial.println("Flash error!");
     else Load();
+
+    pagesCount = pageNames.size();
 }
 
 DeckPrefs::Errors_e DeckPrefs::InitFS()
