@@ -287,16 +287,16 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
 void DeckDisplay::PageUpdate(const uint32_t &page)
 {
     // reject page num if over amount of pages
-    if((int32_t)page >= DeckCommon::Prefs->pagesCount) return;
+    if(page >= DeckCommon::Prefs->pages.size()) return;
 
     display->fillScreen(BLACK);
 
     char pageStr[32];
-    if(DeckCommon::Prefs->pageNames.at(page)[0] == 0)
+    if(DeckCommon::Prefs->pages.at(page)[0] == 0)
         sprintf(pageStr, "Page %d", (int)page+1);
-    else sprintf(pageStr, "Page %d: %s", (int)page+1, DeckCommon::Prefs->pageNames.at(page));
+    else sprintf(pageStr, "Page %d: %s", (int)page+1, DeckCommon::Prefs->pages.at(page));
 
-    if((int32_t)page == DeckCommon::Prefs->pagesCount-1)
+    if(page == DeckCommon::Prefs->pages.size()-1)
          TopPanelUpdate(pageStr, Align_Center, "<-Prev Page", Align_Left);
     else if(!page)
          TopPanelUpdate(pageStr, Align_Center, "Next Page ->", Align_Right);

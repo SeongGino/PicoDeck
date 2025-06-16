@@ -29,13 +29,11 @@ public:
         Error_None = 10
     };
 
-    std::vector<const char*> pageNames = {
+    std::vector<const char*> pages = {
         "Avatar Actions",
         "Scenes",
         "System Apps",
     };
-
-    int pagesCount;
 
     /// @brief    Constructor
     DeckPrefs();
