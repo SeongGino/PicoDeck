@@ -60,18 +60,54 @@ bool DeckDisplay::Begin(const int &scl, const int &sda, const Adafruit_MultiDisp
     } else return false;
 }
 
-void DeckDisplay::TopPanelUpdate(const char *mainText, const char *subText)
+void DeckDisplay::TopPanelUpdate(const char *mainText, const PanelTextAlign_e &textAlign, const char *subText, const PanelTextAlign_e &subAlign)
 {
     // draw text in banner canvas
     topBannerBufMain.fillScreen(BLACK);
     topBannerBufMain.setFont(&Sega7x7);
-    topBannerBufMain.setCursor(0, 3+SEGAFONT7_HEIGHT);
+    switch(textAlign) {
+    case Align_Left:
+        topBannerBufMain.setCursor(0, 3+SEGAFONT7_HEIGHT);
+        break;
+    case Align_Center:
+    case Align_Right:
+    {
+        int16_t x, y;
+        uint16_t w, h;
+        topBannerBufMain.getTextBounds(mainText, 0, SEGAFONT7_HEIGHT, &x, &y, &w, &h);
+        switch(textAlign) {
+        case Align_Center: topBannerBufMain.setCursor(64-(w >> 1), 3+SEGAFONT7_HEIGHT); break;
+        case Align_Right:  topBannerBufMain.setCursor(128-w, 3+SEGAFONT7_HEIGHT);       break;
+        }
+        break;
+    }
+    }
     topBannerBufMain.print(mainText);
-    topBannerBufSub.fillScreen(BLACK);
-    topBannerBufSub.setFont(&Sega7x7);
-    topBannerBufSub.setCursor(0, 3+SEGAFONT7_HEIGHT);
-    if(subText != nullptr) topBannerBufSub.print(subText);
-    else topBannerBufSub.print(mainText);
+    
+    
+    if(subText == nullptr) memcpy(topBannerBufSub.getBuffer(), topBannerBufMain.getBuffer(), ((topBannerBufMain.width()+7) >> 3) * topBannerBufMain.height());
+    else {
+        topBannerBufSub.fillScreen(BLACK);
+        topBannerBufSub.setFont(&Sega7x7);
+        switch(subAlign) {
+        case Align_Left:
+            topBannerBufSub.setCursor(0, 3+SEGAFONT7_HEIGHT);
+            break;
+        case Align_Center:
+        case Align_Right:
+        {
+            int16_t x, y;
+            uint16_t w, h;
+            topBannerBufSub.getTextBounds(subText, 0, SEGAFONT7_HEIGHT, &x, &y, &w, &h);
+            switch(subAlign) {
+            case Align_Center: topBannerBufSub.setCursor(64-(w >> 1), 3+SEGAFONT7_HEIGHT); break;
+            case Align_Right:  topBannerBufSub.setCursor(128-w, 3+SEGAFONT7_HEIGHT);       break;
+            }
+            break;
+        }
+        }
+        topBannerBufSub.print(subText);
+    }
 
     // draw header line in display buffer if not there
     if(!display->getPixel(0, 15)) display->drawFastHLine(0, 15, 128, WHITE);
@@ -249,12 +285,12 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
     display->fillScreen(BLACK);
 
     // TODO: maybe the top panel updater should handle label centering itself?
-    char pageStr[16];
-    sprintf(pageStr, "         Page %d", page+1);
+    char pageStr[8];
+    sprintf(pageStr, "Page %d", page+1);
     switch(page) {
-    case 0:  TopPanelUpdate(pageStr, "          Next Page ->"); break;
-    case 2:  TopPanelUpdate(pageStr, "<-Prev Page"); break;
-    default: TopPanelUpdate(pageStr, "   <-Prev | Next->"); break;
+    case 0:  TopPanelUpdate(pageStr, Align_Center, "Next Page ->", Align_Right); break;
+    case 2:  TopPanelUpdate(pageStr, Align_Center, "<-Prev Page", Align_Left); break;
+    default: TopPanelUpdate(pageStr, Align_Center, "<-Prev        Next->", Align_Center); break;
     }
 
     //display->drawFastVLine(31, 16, 48, WHITE);

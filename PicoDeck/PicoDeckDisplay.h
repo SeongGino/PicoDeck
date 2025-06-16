@@ -382,13 +382,19 @@ public:
         Screen_SaveError
     };
 
+    enum PanelTextAlign_e {
+        Align_Left = 0,
+        Align_Center,
+        Align_Right
+    };
+
     /// @brief Verifies display pins validity to pass to display constructor, then starts up the display
     /// @return success (true) or fail (false)
     bool Begin(const int &scl, const int &sda, const Adafruit_MultiDisplay::ScreenType_e &displayType);
 
     /// @brief Update top panel with either a string of 22 characters, or a combination of text prefix and a profile name
     /// @details Prefix should only have up to seven characters, to prevent the profile name being cutoff
-    void TopPanelUpdate(const char *mainText, const char *subText = nullptr);
+    void TopPanelUpdate(const char *mainText, const PanelTextAlign_e &textAlign = Align_Left, const char *subText = nullptr, const PanelTextAlign_e &subAlign = Align_Left);
 
     /// @brief Clear screen for different operational states
     void ScreenModeChange(const ScreenMode_e &screenMode);
