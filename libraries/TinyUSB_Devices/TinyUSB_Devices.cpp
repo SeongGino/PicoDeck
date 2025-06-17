@@ -40,6 +40,7 @@ TinyUSBDevices_ TinyUSBDevices;
  *****************************/ 
 
   Keyboard_::Keyboard_(void) {
+    memset(modsBuffer, 0, sizeof(modsBuffer));
   }
   
   void Keyboard_::report()
@@ -189,12 +190,15 @@ TinyUSBDevices_ TinyUSBDevices;
   // call release(), releaseAll(), or otherwise clear the report and resend.
   bool Keyboard_::press(uint8_t k)
   {
-    uint8_t i;
     if (k >= 136) {     // it's a non-printing key (not a modifier)
       k = k - 136;
     } else if (k >= 128) {  // it's a modifier key
-      _keyReport.modifiers |= (1<<(k-128));
-      k = 0;
+      if(_keyReport.modifiers & (1<<(k-128))) ++modsBuffer[k-128];
+      else {
+        _keyReport.modifiers |= (1<<(k-128));
+        TinyUSBDevices.newReport = true;
+      }
+      return true;
     } else {        // it's a printing key
       k = pgm_read_byte(_asciimap + k);
       if (!k) {
@@ -202,20 +206,23 @@ TinyUSBDevices_ TinyUSBDevices;
         return false;
       }
       if (k & 0x80) {           // it's a capital letter or other character reached with shift
-        _keyReport.modifiers |= 0x02; // the left shift modifier
+        if(_keyReport.modifiers & 0x02) ++modsBuffer[1];
+        else _keyReport.modifiers |= 0x02; // the left shift modifier
         k &= 0x7F;
       }
     }
     
     // Add k to the key report only if it's not already present
     // and if there is an empty slot.
-    if (_keyReport.keys[0] != k && _keyReport.keys[1] != k && 
-      _keyReport.keys[2] != k && _keyReport.keys[3] != k &&
-      _keyReport.keys[4] != k && _keyReport.keys[5] != k) {
-      
+    uint8_t i;
+    if (k) {
       for (i=0; i<6; ++i) {
-        if (_keyReport.keys[i] == 0x00) {
-          _keyReport.keys[i] = k;
+        if (!_keyReport.keys[i]) {
+          if(_keyReport.keys[i] == k) keyBuffer.insert(k);
+          else {
+            _keyReport.keys[i] = k;
+            TinyUSBDevices.newReport = true;
+          }
           break;
         }
       }
@@ -224,11 +231,32 @@ TinyUSBDevices_ TinyUSBDevices;
         setWriteError();
         return false;
       }
-
-      TinyUSBDevices.newReport = true;
     }
 
     return true;
+  }
+
+  // macro for updating modifiers (L/R CTRL/SHIFT/ALT/Meta) with a bitmap
+  void Keyboard_::pressModifiers(uint8_t m)
+  {
+    for(uint8_t i = 0; i < sizeof(modsBuffer); ++i) {
+      if(m & (1<<i)) {
+        if(_keyReport.modifiers & (1<<i)) ++modsBuffer[i];
+        else _keyReport.modifiers |= (1<<i);
+      }
+    }
+    TinyUSBDevices.newReport = true;
+  }
+
+  void Keyboard_::releaseModifiers(uint8_t m)
+  {
+    for(uint8_t i = 0; i < sizeof(modsBuffer); ++i) {
+      if(m & (1<<i)) {
+        if(modsBuffer[i]) --modsBuffer[i];
+        else _keyReport.modifiers &= ~(1<<i);
+      }
+    }
+    TinyUSBDevices.newReport = true;
   }
   
   // release() takes the specified key out of the persistent key report and
@@ -240,25 +268,34 @@ TinyUSBDevices_ TinyUSBDevices;
     if (k >= 136) {     // it's a non-printing key (not a modifier)
       k = k - 136;
     } else if (k >= 128) {  // it's a modifier key
-      _keyReport.modifiers &= ~(1<<(k-128));
-      k = 0;
+      if(modsBuffer[k-128]) --modsBuffer[k-128];
+      else {
+        _keyReport.modifiers &= ~(1<<(k-128));
+        TinyUSBDevices.newReport = true;
+      }
+      return true;
     } else {        // it's a printing key
       k = pgm_read_byte(_asciimap + k);
       if (!k) {
         return false;
       }
       if (k & 0x80) {             // it's a capital letter or other character reached with shift
-        _keyReport.modifiers &= ~(0x02);  // the left shift modifier
+        if(modsBuffer[1]) --modsBuffer[1];
+        else _keyReport.modifiers &= ~0x02;  // the left shift modifier
         k &= 0x7F;
       }
     }
     
     // Test the key report to see if k is present.  Clear it if it exists.
-    // Check all positions in case the key is present more than once (which it shouldn't be)
     for (i=0; i<6; ++i) {
       if (0 != k && _keyReport.keys[i] == k) {
-        _keyReport.keys[i] = 0x00;
-        TinyUSBDevices.newReport = true;
+        auto matchingKey = keyBuffer.find(k);
+        if(matchingKey != keyBuffer.end()) keyBuffer.erase(matchingKey);
+        else {
+          _keyReport.keys[i] = 0x00;
+          TinyUSBDevices.newReport = true;
+        }
+        break;
       }
     }
 
@@ -267,14 +304,18 @@ TinyUSBDevices_ TinyUSBDevices;
   
   void Keyboard_::releaseAll(void)
   {
-    _keyReport.keys[0] = 0;
-    _keyReport.keys[1] = 0; 
-    _keyReport.keys[2] = 0;
-    _keyReport.keys[3] = 0; 
-    _keyReport.keys[4] = 0;
-    _keyReport.keys[5] = 0; 
-    _keyReport.modifiers = 0;
-    TinyUSBDevices.newReport = true;
+    if(memcmp(_keyReport.keys, (char[]){0,0,0,0,0,0}, sizeof(KeyReport::keys)) || _keyReport.modifiers) {
+      _keyReport.keys[0] = 0;
+      _keyReport.keys[1] = 0;
+      _keyReport.keys[2] = 0;
+      _keyReport.keys[3] = 0;
+      _keyReport.keys[4] = 0;
+      _keyReport.keys[5] = 0;
+      _keyReport.modifiers = 0;
+      memset(modsBuffer, 0, sizeof(modsBuffer));
+      keyBuffer.clear();
+      TinyUSBDevices.newReport = true;
+    }
   }
 
   size_t Keyboard_::write(uint8_t c)

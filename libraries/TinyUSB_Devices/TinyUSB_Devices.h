@@ -45,6 +45,7 @@
 #define _TINYUSB_DEVICES_H_
 
 #include <Arduino.h>
+#include <unordered_set>
 
 /*****************************
  *   GLOBAL SECTION
@@ -135,13 +136,20 @@ extern TinyUSBDevices_ TinyUSBDevices;
   {
   private:
     KeyReport _keyReport;
+
+    // storage for keys that were already pressed
+    std::unordered_multiset<uint8_t> keyBuffer;
+    // storage for modifiers that were already pressed
+    uint8_t modsBuffer[8];
   public:
     Keyboard_(void);
     void report();
     size_t write(uint8_t k);
     size_t write(const uint8_t *buffer, size_t size);
     bool press(uint8_t k);
+    void pressModifiers(uint8_t m);
     bool release(uint8_t k);
+    void releaseModifiers(uint8_t m);
     void releaseAll(void);
   };
 extern Keyboard_ Keyboard;

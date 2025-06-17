@@ -153,25 +153,20 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
                     if(!state) {
                         // state is low, button is pressed
 
-                        if((btn.keys.at(0) & 0xFF) < LGB_PAGEKEYS) switch(btn.keys.at(0) & 0xFF) {
-                        case LGB_PREV: if(page) --page; break;
-                        case LGB_NEXT: if(page < pagesCount-1) ++page; break;
-                        default: break;
+                        if((btn.keys.at(0) & 0xFF) < LGB_PAGEKEYS) {
+                            Keyboard.releaseAll();
+                            switch(btn.keys.at(0) & 0xFF) {
+                            case LGB_PREV: if(page) --page; break;
+                            case LGB_NEXT: if(page < pagesCount-1) ++page; break;
+                            default: break;
+                            }
                         }
 
                         // if reporting is enabled for the button
                         if(report & bitMask) {
                             if(btn.keys.size() > (uint)page) {
-                                if(btn.keys.at(page) & 0xFF00) {
-                                    if(btn.keys.at(page) &  MOD_CTRL       ) Keyboard.press(KEY_LEFT_CTRL);
-                                    if(btn.keys.at(page) &  MOD_SHIFT      ) Keyboard.press(KEY_LEFT_SHIFT);
-                                    if(btn.keys.at(page) &  MOD_ALT        ) Keyboard.press(KEY_LEFT_ALT);
-                                    if(btn.keys.at(page) &  MOD_META       ) Keyboard.press(KEY_LEFT_GUI);
-                                    if(btn.keys.at(page) & (MOD_CTRL  << 4)) Keyboard.press(KEY_RIGHT_CTRL);
-                                    if(btn.keys.at(page) & (MOD_SHIFT << 4)) Keyboard.press(KEY_RIGHT_SHIFT);
-                                    if(btn.keys.at(page) & (MOD_ALT   << 4)) Keyboard.press(KEY_RIGHT_ALT);
-                                    if(btn.keys.at(page) & (MOD_META  << 4)) Keyboard.press(KEY_RIGHT_GUI);
-                                }
+                                if(btn.keys.at(page) & 0xFF00)
+                                    Keyboard.pressModifiers(btn.keys.at(page) >> 8);
 
                                 if((btn.keys.at(page) & 0xFF) > LGB_PAGEKEYS)
                                     Keyboard.press(btn.keys.at(page) & 0xFF);
@@ -194,16 +189,8 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
                             reportedPressed &= ~bitMask;
 
                             if(btn.keys.size() > (uint)page) {
-                                if(btn.keys.at(page) & 0xFF00) {
-                                    if(btn.keys.at(page) &  MOD_CTRL       ) Keyboard.release(KEY_LEFT_CTRL);
-                                    if(btn.keys.at(page) &  MOD_SHIFT      ) Keyboard.release(KEY_LEFT_SHIFT);
-                                    if(btn.keys.at(page) &  MOD_ALT        ) Keyboard.release(KEY_LEFT_ALT);
-                                    if(btn.keys.at(page) &  MOD_META       ) Keyboard.release(KEY_LEFT_GUI);
-                                    if(btn.keys.at(page) & (MOD_CTRL  << 4)) Keyboard.release(KEY_RIGHT_CTRL);
-                                    if(btn.keys.at(page) & (MOD_SHIFT << 4)) Keyboard.release(KEY_RIGHT_SHIFT);
-                                    if(btn.keys.at(page) & (MOD_ALT   << 4)) Keyboard.release(KEY_RIGHT_ALT);
-                                    if(btn.keys.at(page) & (MOD_META  << 4)) Keyboard.release(KEY_RIGHT_GUI);
-                                }
+                                if(btn.keys.at(page) & 0xFF00)
+                                    Keyboard.releaseModifiers(btn.keys.at(page) >> 8);
 
                                 if((btn.keys.at(page) & 0xFF) > LGB_PAGEKEYS)
                                     Keyboard.release(btn.keys.at(page));

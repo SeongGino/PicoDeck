@@ -38,9 +38,10 @@
 void PixelUpdate(const int &r, const int &g, const int &b, const int &pixel, const bool &fill = false);
 
 enum FifoCmds_e {
-    DISP_BTN_UPDATE = 0,
+    DISP_BTN_PRESS = 0,
     DISP_PAGE_UPDATE = 1 << 24,
-    DECK_SAVING = 2 << 24
+    DECK_SAVING = 2 << 24,
+    DISP_BTN_RELEASE = 1 << 30,
 };
 
 //// System/Devices

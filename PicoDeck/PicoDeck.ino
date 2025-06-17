@@ -73,7 +73,7 @@ void loop() {
     buttons.Poll(0);
 
     if(buttons.pressed) {
-        rp2040.fifo.push(buttons.pressed);
+        rp2040.fifo.push(buttons.pressed | DISP_BTN_PRESS);
         #ifdef SERIAL_DEBUG
         for(int i = 0; i < (int)ButtonCount; ++i) if(buttons.pressed & 1 << i) {
             if(LightgunButtons::ButtonDesc[i].keys.size() > buttons.page)
@@ -83,7 +83,7 @@ void loop() {
         #endif // SERIAL_DEBUG
     }
     if(buttons.released)
-        rp2040.fifo.push(buttons.released);
+        rp2040.fifo.push(buttons.released | DISP_BTN_RELEASE);
 
     if(millis() - lastUSBpoll >= POLL_RATE) {
         lastUSBpoll = millis();
@@ -116,7 +116,8 @@ void loop() {
 
 void loop1() {
     if(rp2040.fifo.pop_nb(&fifoData)) switch(fifoData & 0xFF000000) {
-        case DISP_BTN_UPDATE:  if(OLED.display != nullptr) OLED.ButtonsUpdate(fifoData); break;
+        case DISP_BTN_PRESS:
+        case DISP_BTN_RELEASE: if(OLED.display != nullptr) OLED.ButtonsUpdate(fifoData, fifoData & DISP_BTN_RELEASE); break;
         case DISP_PAGE_UPDATE: if(OLED.display != nullptr) OLED.PageUpdate(fifoData & 0xFF); break;
         case DECK_SAVING:
             if(OLED.display != nullptr) OLED.SaveUpdate(fifoData & 0xFF);

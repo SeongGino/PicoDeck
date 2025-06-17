@@ -252,13 +252,14 @@ void DeckDisplay::TopPanelScroll()
     topBannUpdated = true;
 }
 
-void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
+void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap, const bool &isReleased)
 {
     for(int i = 0, b = 0, x = 0, y = 0; b < (int)ButtonCount; ++b) {
         if(LightgunButtons::ButtonDesc[b].keys.at(0) < LightgunButtons::LGB_PAGEKEYS) continue;
 
-        if(btnsMap & (1 << b)) {
-            // invert btn bitmap
+        // invert btn bitmap to match state (if not already matching)
+        // check top-leftmost pixel - on = pressed previously, off = wasn't pressed
+        if(btnsMap & (1 << b) && ((isReleased && keyBoxBitmaps[i][0]) || (!isReleased && !keyBoxBitmaps[i][0]))) {
             for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
                 keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
 
@@ -269,7 +270,7 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
             display->drawBitmap(xOffset, yOffset, keyBoxBitmaps[i], keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
 
             screenUpdated = true;
-        }
+        }   
 
         ++i;
         // increment/loop around current row and column for next btn
@@ -317,15 +318,9 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
         if(LightgunButtons::ButtonDesc[b].keys.size() > page && LightgunButtons::ButtonDesc[b].keys.at(page)) {
             if(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF00) {
                 keyBoxBuf.setCursor(3, SEGAFONT7_HEIGHT);
-                // SUPER UNGA BUNGA way of appending all modifier keys into this line
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_CTRL)         keyBoxBuf.print((char)KEY_LEFT_CTRL);
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_SHIFT)        keyBoxBuf.print((char)KEY_LEFT_SHIFT);
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_ALT)          keyBoxBuf.print((char)KEY_LEFT_ALT);
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_META)         keyBoxBuf.print((char)KEY_LEFT_GUI);
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_CTRL  << 4)) keyBoxBuf.print((char)KEY_RIGHT_CTRL);
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_SHIFT << 4)) keyBoxBuf.print((char)KEY_RIGHT_SHIFT);
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_ALT   << 4)) keyBoxBuf.print((char)KEY_RIGHT_ALT);
-                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_META  << 4)) keyBoxBuf.print((char)KEY_RIGHT_GUI);
+                for(int k = 0; k < 8; ++k)
+                    if(LightgunButtons::ButtonDesc[b].keys.at(page) & (0x0100 << k)) keyBoxBuf.write((char)0x80+k);
+                
                 keyBoxBuf.setCursor(7, SEGAFONT7_HEIGHT+1+SEGAFONT7_HEIGHT);
             } else keyBoxBuf.setCursor(4, 4+SEGAFONT7_HEIGHT);
             keyBoxBuf.print(keyStrings[(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF)-0x20]);

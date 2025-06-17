@@ -408,7 +408,7 @@ public:
     void TopPanelScroll();
 
     /// @brief Inverts and blits polled buttons' bitmaps' atop the current displayed inputs page
-    void ButtonsUpdate(const uint32_t &btnsMap);
+    void ButtonsUpdate(const uint32_t &btnsMap, const bool &isReleased);
 
     /// @brief Updates bindings based on the desired page, derived from LGB's Buttons Descriptor
     void PageUpdate(const uint32_t &page);
