@@ -22,6 +22,7 @@
 #define _LIGHTGUNBUTTONS_H_
 
 #include <stdint.h>
+#include <vector>
 
 #define DEBOUNCE_TICKS 15
 #ifdef ARDUINO_ARCH_RP2040
@@ -36,18 +37,25 @@
 /// If your light gun needs more than 32 buttons then I wanna see pics.
 class LightgunButtons {
 public:
-    enum {
+    enum SpecialFunctions_e {
         LGB_PREV = 0,
         LGB_NEXT,
-        LGB_TYPES
-    } SpecialFunctions_e;
+        LGB_PAGEKEYS
+    };
+
+    // left side modifier enums
+    // to use right side, shift by four bytes (<< 4)
+    enum KeyModifiers_e {
+        MOD_CTRL = 1 << 8,
+        MOD_SHIFT = 1 << 9,
+        MOD_ALT = 1 << 10,
+        MOD_META = 1 << 11
+    };
 
     /// @brief Descriptor.
     typedef struct Desc_s {
-        int8_t pin;                   ///< Arduino defined pin to read.
-        uint8_t reportCode;           ///< Report code type 1, with no modifiers
-        uint8_t reportCode2;          ///< Report code type 2, with +CTRL
-        uint8_t reportCode3;          ///< Report code type 3, with +SHIFT
+        int8_t pin;                       ///< Arduino defined pin to read.
+        std::vector<uint16_t> keys; ///< Main Key report code
     } Desc_t;
 
     /// @brief Runtime debouncing state data.
@@ -60,8 +68,9 @@ public:
     /// @brief Constructor.
     LightgunButtons(Data_t data, unsigned int count);
 
-    /// @brief Initialize the buttons.
-    void Begin();
+    /// @brief Initialize the buttons and pages count.
+    /// @return Maximum key mapping pages available, according to ButtonDesc
+    int Begin();
 
     /// @brief De-initialize the buttons.
     void Unset();
@@ -129,6 +138,9 @@ public:
 
     /// @brief Flag that determines which page of the inputs map to use
     int page;
+
+    /// @brief Max amount of unique btn map pages
+    int pagesCount;
 
     /// @brief Test if pressed button(s) in comibination with already held buttons match given values.
     /// @details Test the pressed buttons equals a given value along with a modifer bit mask

@@ -1,7 +1,6 @@
-#include "PicoDeckCommon.h"
 /*!
  * @file PicoDeckDisplay.cpp
- * @brief Wrapper interface for Adafruit_SSD1306 to display Macros interface.
+ * @brief Wrapper interface for many OLED display drivers to render Macros interface.
  *
  * @copyright That One Seong, 2025
  * @copyright GNU General Public License
@@ -137,6 +136,7 @@ void DeckDisplay::ScreenModeChange(const ScreenMode_e &screenMode)
             case Screen_Default:
                 PageUpdate(DeckCommon::Prefs->curPage);
                 break;
+            /*
             case Screen_Saving:
                 TopPanelUpdate("Saving Profiles");
                 display->setTextSize(2);
@@ -157,6 +157,7 @@ void DeckDisplay::ScreenModeChange(const ScreenMode_e &screenMode)
                 display->setCursor(22, 40);
                 display->print("failed");
                 break;
+            */
             default: break;
         }
 
@@ -254,7 +255,7 @@ void DeckDisplay::TopPanelScroll()
 void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
 {
     for(int i = 0, b = 0, x = 0, y = 0; b < (int)ButtonCount; ++b) {
-        if(LightgunButtons::ButtonDesc[b].reportCode < LightgunButtons::LGB_TYPES) continue;
+        if(LightgunButtons::ButtonDesc[b].keys.at(0) < LightgunButtons::LGB_PAGEKEYS) continue;
 
         if(btnsMap & (1 << b)) {
             // invert btn bitmap
@@ -287,16 +288,16 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap)
 void DeckDisplay::PageUpdate(const uint32_t &page)
 {
     // reject page num if over amount of pages
-    if(page >= DeckCommon::Prefs->pages.size()) return;
+    if(page >= (uint)DeckCommon::pagesCount) return;
 
     display->fillScreen(BLACK);
 
-    char pageStr[32];
-    if(DeckCommon::Prefs->pages.at(page)[0] == 0)
-        sprintf(pageStr, "Page %d", (int)page+1);
-    else sprintf(pageStr, "Page %d: %s", (int)page+1, DeckCommon::Prefs->pages.at(page));
+    char pageStr[40];
+    if(DeckCommon::Prefs->pages.size() > page && DeckCommon::Prefs->pages.at(page).name[0] != 0)
+         sprintf(pageStr, "Page %d: %s", (int8_t)page+1, DeckCommon::Prefs->pages.at(page).name);
+    else sprintf(pageStr, "Page %d", (int8_t)page+1);
 
-    if(page == DeckCommon::Prefs->pages.size()-1)
+    if(page == (uint)DeckCommon::pagesCount-1)
          TopPanelUpdate(pageStr, Align_Center, "<-Prev Page", Align_Left);
     else if(!page)
          TopPanelUpdate(pageStr, Align_Center, "Next Page ->", Align_Right);
@@ -309,21 +310,26 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
     //display->drawFastHLine(0, 47, 128, WHITE);
 
     for(int i = 0, b = 0, x = 0, y = 0; b < (int)ButtonCount; ++b) {
-        if(LightgunButtons::ButtonDesc[b].reportCode < LightgunButtons::LGB_TYPES) continue;
+        if((LightgunButtons::ButtonDesc[b].keys.at(0) & 0xFF) < LightgunButtons::LGB_PAGEKEYS) continue;
 
         keyBoxBuf.fillScreen(BLACK);
 
-        // TODO: handle custom combos stuff instead of hard-coded page modifiers
-        if(page) {
-            keyBoxBuf.setCursor(3, SEGAFONT7_HEIGHT);
-            switch(page) {
-                case 1: keyBoxBuf.println((char)KEY_LEFT_CTRL); break;
-                case 2: keyBoxBuf.println((char)KEY_LEFT_SHIFT); break;
-                default: break;
-            }
-            keyBoxBuf.setCursor(7, SEGAFONT7_HEIGHT+1+SEGAFONT7_HEIGHT);
-        } else keyBoxBuf.setCursor(4, 4+SEGAFONT7_HEIGHT);
-        keyBoxBuf.print(keyStrings[*(&LightgunButtons::ButtonDesc[b].reportCode+page)-0x20]);
+        if(LightgunButtons::ButtonDesc[b].keys.size() > page && LightgunButtons::ButtonDesc[b].keys.at(page)) {
+            if(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF00) {
+                keyBoxBuf.setCursor(3, SEGAFONT7_HEIGHT);
+                // SUPER UNGA BUNGA way of appending all modifier keys into this line
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_CTRL)         keyBoxBuf.print((char)KEY_LEFT_CTRL);
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_SHIFT)        keyBoxBuf.print((char)KEY_LEFT_SHIFT);
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_ALT)          keyBoxBuf.print((char)KEY_LEFT_ALT);
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & LightgunButtons::MOD_META)         keyBoxBuf.print((char)KEY_LEFT_GUI);
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_CTRL  << 4)) keyBoxBuf.print((char)KEY_RIGHT_CTRL);
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_SHIFT << 4)) keyBoxBuf.print((char)KEY_RIGHT_SHIFT);
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_ALT   << 4)) keyBoxBuf.print((char)KEY_RIGHT_ALT);
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & (LightgunButtons::MOD_META  << 4)) keyBoxBuf.print((char)KEY_RIGHT_GUI);
+                keyBoxBuf.setCursor(7, SEGAFONT7_HEIGHT+1+SEGAFONT7_HEIGHT);
+            } else keyBoxBuf.setCursor(4, 4+SEGAFONT7_HEIGHT);
+            keyBoxBuf.print(keyStrings[(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF)-0x20]);
+        }
 
         // copy finished canvas to this button's backbuffer
         memcpy(keyBoxBitmaps[i], keyBoxBuf.getBuffer(), sizeof(keyBoxBitmaps[i]));

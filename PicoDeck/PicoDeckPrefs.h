@@ -29,13 +29,7 @@ public:
         Error_None = 10
     };
 
-    std::vector<const char*> pages = {
-        "Avatar Actions",
-        "Scenes",
-        "System Apps",
-    };
-
-    /// @brief    Constructor
+    /// @brief Constructor
     DeckPrefs();
 
     /// @brief Initialize filesystem
@@ -48,6 +42,21 @@ public:
     /// @brief Save Data to Flash
     Errors_e Save();
 
-    // Local copy of current hotkeys page - changed value signals LED change method
+    /// @brief Strings storage struct for pages vector
+    typedef struct Pages_s {
+        char name[24];
+        uint32_t color;
+    } Pages_t;
+
+    /// @brief Pages metadata dynamic array
+    /// @details Can be less than total available macro pages as defined in LightgunButtons::ButtonDesc
+    std::vector<Pages_t> pages = {
+        {"Avatar Actions", 0x000000FF},
+        {"Scenes", 0x0000FF00},
+        {"System Apps", 0x00FF0000},
+    };
+
+    /// @brief Local copy of current hotkeys page from LightgunButtons
+    /// @details If comparison to LGB's page value returns false, signals page change for LEDs/OLED
     int curPage = 0;
 };

@@ -18,24 +18,6 @@
 
 void setup()
 {
-    // wait for signal from Core1, which should be after prefs have loaded
-    rp2040.fifo.pop();
-
-    // In case some I2C devices deadlock the program
-    // (can happen due to bad pin mappings)
-    Wire.setTimeout(100);
-    Wire1.setTimeout(100);
-
-    if(OLED.Begin(DISP_SCL, DISP_SDA, Adafruit_MultiDisplay::I2C_SSD1306) == false) {
-        // Does this ever actually happen...?
-        #ifdef SERIAL_DEBUG
-        Serial.println("Display init error!");
-        #endif // SERIAL_DEBUG
-    }
-}
-
-void setup1()
-{
     #ifdef SERIAL_DEBUG
     Serial.begin(9600);
     Serial.setTimeout(0);
@@ -53,7 +35,7 @@ void setup1()
     // wait until device mounted
     while(!USBDevice.mounted()) yield();
 
-    buttons.Begin();
+    DeckCommon::pagesCount = buttons.Begin();
     #ifndef SERIAL_DEBUG
     buttons.ReportEnable();
     #endif // SERIAL_DEBUG
@@ -64,35 +46,40 @@ void setup1()
 
     neopixel.begin();
     
-    switch(DeckCommon::Prefs->curPage) {
-    case 0:  PixelUpdate(255, 0, 0, 0, true); break;
-    case 1:  PixelUpdate(0, 255, 0, 0, true); break;
-    case 2:  PixelUpdate(0, 0, 255, 0, true); break;
+    if(DeckCommon::Prefs->curPage < DeckCommon::pagesCount)
+        PixelUpdate(DeckCommon::Prefs->pages.at(DeckCommon::Prefs->curPage).color, 0, true);
+    else PixelUpdate(0, 0, 0, 0, true);
+}
+
+void setup1()
+{
+    // wait for signal from Core1, which should be after prefs have loaded
+    rp2040.fifo.pop();
+
+    // In case some I2C devices deadlock the program
+    // (can happen due to bad pin mappings)
+    Wire.setTimeout(100);
+    Wire1.setTimeout(100);
+
+    if(OLED.Begin(DISP_SCL, DISP_SDA, Adafruit_MultiDisplay::I2C_SSD1306) == false) {
+        // Does this ever actually happen...?
+        #ifdef SERIAL_DEBUG
+        Serial.println("Display init error!");
+        #endif // SERIAL_DEBUG
     }
 }
 
 void loop() {
-    if(rp2040.fifo.pop_nb(&fifoData)) switch(fifoData & 0xFF000000) {
-        case DISP_BTN_UPDATE:  if(OLED.display != nullptr) OLED.ButtonsUpdate(fifoData); break;
-        case DISP_PAGE_UPDATE: if(OLED.display != nullptr) OLED.PageUpdate(fifoData & 0x000000FF); break;
-        case DECK_SAVING:
-            if(OLED.display != nullptr) OLED.SaveUpdate(fifoData & 0xFF);
-            break;
-        default: break;
-    }
-
-    if(OLED.display != nullptr)
-        OLED.IdleOps();
-}
-
-void loop1() {
     buttons.Poll(0);
 
     if(buttons.pressed) {
         rp2040.fifo.push(buttons.pressed);
         #ifdef SERIAL_DEBUG
-        for(int i = 0; i < ButtonCount; ++i) if(buttons.pressed & 1 << i)
-            Serial.printf("Pressed Button %d (Key: %d)\n", i+1, *&LightgunButtons::ButtonDesc[i].reportCode+buttons.page);
+        for(int i = 0; i < (int)ButtonCount; ++i) if(buttons.pressed & 1 << i) {
+            if(LightgunButtons::ButtonDesc[i].keys.size() > buttons.page)
+                 Serial.printf("Pressed Button %d (Key: %d)\n", i+1, LightgunButtons::ButtonDesc[i].keys.at(buttons.page) & 0xFF);
+            else Serial.printf("Pressed Button %d (No keybind)\n", i+1);
+            }
         #endif // SERIAL_DEBUG
     }
     if(buttons.released)
@@ -126,6 +113,28 @@ void loop1() {
         DeckPrefs::Errors_e saveResult = DeckCommon::Prefs->Save();
         rp2040.fifo.push(DECK_SAVING | (saveResult+1));
     }
+}
+
+void loop1() {
+    if(rp2040.fifo.pop_nb(&fifoData)) switch(fifoData & 0xFF000000) {
+        case DISP_BTN_UPDATE:  if(OLED.display != nullptr) OLED.ButtonsUpdate(fifoData); break;
+        case DISP_PAGE_UPDATE: if(OLED.display != nullptr) OLED.PageUpdate(fifoData & 0xFF); break;
+        case DECK_SAVING:
+            if(OLED.display != nullptr) OLED.SaveUpdate(fifoData & 0xFF);
+            break;
+        default: break;
+    }
+
+    if(OLED.display != nullptr)
+        OLED.IdleOps();
+}
+
+void PixelUpdate(const uint32_t &rgb, const int &pixel, const bool &fill)
+{
+    const uint8_t r = rgb & 0xFF;
+    const uint8_t g = (rgb >> 8) & 0xFF;
+    const uint8_t b = (rgb >> 16) & 0xFF;
+    PixelUpdate(r, g, b, pixel, fill); 
 }
 
 void PixelUpdate(const int &r, const int &g, const int &b, const int &pixel, const bool &fill)

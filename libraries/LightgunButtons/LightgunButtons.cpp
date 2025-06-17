@@ -37,12 +37,13 @@ LightgunButtons::LightgunButtons(Data_t _data, unsigned int _count) :
     internalPressedReleased(0),
     reportedPressed(0),
     count(_count),
+    pagesCount(0),
     stateFifo(_data.pArrFifo),
     debounceCount(_data.pArrDebounceCount)
 {
 }
 
-void LightgunButtons::Begin()
+int LightgunButtons::Begin()
 {
     // set button pins to input with pullup
     for(unsigned int i = 0; i < count; ++i) {
@@ -51,8 +52,12 @@ void LightgunButtons::Begin()
             pinMode(ButtonDesc[i].pin, INPUT_PULLUP);
             stateFifo[i] = 0xFFFFFFFF;
             debounceCount[i] = 0;
+
+            if(ButtonDesc[i].keys.size() > (uint)pagesCount)
+                pagesCount = ButtonDesc[i].keys.size();
         }
     }
+    return pagesCount;
 }
 
 void LightgunButtons::Unset()
@@ -74,6 +79,7 @@ void LightgunButtons::Unset()
     lastRepeatMillis = 0;
     internalPressedReleased = 0;
     reportedPressed = 0;
+    pagesCount = 0;
 }
 
 uint32_t LightgunButtons::Poll(unsigned long minTicks)
@@ -95,7 +101,6 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
     if(debouncing && ticks) {
         bitMask = 1;
         for(unsigned int i = 0; i < count; ++i, bitMask <<= 1) {
-            const Desc_t& btn = ButtonDesc[i];
             if(ButtonDesc[i].pin >= 0) {
                 if(debounceCount[i]) {
                     if(ticks < debounceCount[i]) {
@@ -114,7 +119,7 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
         const Desc_t& btn = ButtonDesc[i];
 
         // do no processing if the pin is uninitialized
-        if(ButtonDesc[i].pin >= 0) {
+        if(btn.pin >= 0) {
             // if not debouncing
             if(!debounceCount[i]) {
                 // read the pin, expected to return 0 or 1
@@ -148,23 +153,30 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
                     if(!state) {
                         // state is low, button is pressed
 
-                        switch(*(&btn.reportCode+(sizeof(uint8_t)*page))) {
+                        if((btn.keys.at(0) & 0xFF) < LGB_PAGEKEYS) switch(btn.keys.at(0) & 0xFF) {
                         case LGB_PREV: if(page) --page; break;
-                        case LGB_NEXT: if(page < 2) ++page; break;
+                        case LGB_NEXT: if(page < pagesCount-1) ++page; break;
                         default: break;
                         }
 
                         // if reporting is enabled for the button
                         if(report & bitMask) {
-                            if(!reportedPressed && page) switch(page) {
-                                case 1: Keyboard.press(KEY_RIGHT_CTRL); break;
-                                case 2: Keyboard.press(KEY_RIGHT_SHIFT); break;
-                                default: break;
+                            if(btn.keys.size() > (uint)page) {
+                                if(btn.keys.at(page) & 0xFF00) {
+                                    if(btn.keys.at(page) &  MOD_CTRL       ) Keyboard.press(KEY_LEFT_CTRL);
+                                    if(btn.keys.at(page) &  MOD_SHIFT      ) Keyboard.press(KEY_LEFT_SHIFT);
+                                    if(btn.keys.at(page) &  MOD_ALT        ) Keyboard.press(KEY_LEFT_ALT);
+                                    if(btn.keys.at(page) &  MOD_META       ) Keyboard.press(KEY_LEFT_GUI);
+                                    if(btn.keys.at(page) & (MOD_CTRL  << 4)) Keyboard.press(KEY_RIGHT_CTRL);
+                                    if(btn.keys.at(page) & (MOD_SHIFT << 4)) Keyboard.press(KEY_RIGHT_SHIFT);
+                                    if(btn.keys.at(page) & (MOD_ALT   << 4)) Keyboard.press(KEY_RIGHT_ALT);
+                                    if(btn.keys.at(page) & (MOD_META  << 4)) Keyboard.press(KEY_RIGHT_GUI);
+                                }
+
+                                if((btn.keys.at(page) & 0xFF) > LGB_PAGEKEYS)
+                                    Keyboard.press(btn.keys.at(page) & 0xFF);
                             }
                             reportedPressed |= bitMask;
-
-                            if(*(&btn.reportCode+(sizeof(uint8_t)*page)) > LGB_TYPES)
-                                Keyboard.press(*(&btn.reportCode+(sizeof(uint8_t)*page)));
                         }
 
                         // button is debounced pressed and add it to the pressed/released combo
@@ -180,13 +192,22 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
                         // in case the reporting is disabled while button(s) are pressed
                         if(reportedPressed & bitMask) {
                             reportedPressed &= ~bitMask;
-                            if(!reportedPressed) switch(page) {
-                                case 1: Keyboard.release(KEY_RIGHT_CTRL); break;
-                                case 2: Keyboard.release(KEY_RIGHT_SHIFT); break;
-                            }
 
-                            if(*(&btn.reportCode+(sizeof(uint8_t)*page)) > LGB_TYPES)
-                                Keyboard.release(*(&btn.reportCode+(sizeof(uint8_t)*page)));
+                            if(btn.keys.size() > (uint)page) {
+                                if(btn.keys.at(page) & 0xFF00) {
+                                    if(btn.keys.at(page) &  MOD_CTRL       ) Keyboard.release(KEY_LEFT_CTRL);
+                                    if(btn.keys.at(page) &  MOD_SHIFT      ) Keyboard.release(KEY_LEFT_SHIFT);
+                                    if(btn.keys.at(page) &  MOD_ALT        ) Keyboard.release(KEY_LEFT_ALT);
+                                    if(btn.keys.at(page) &  MOD_META       ) Keyboard.release(KEY_LEFT_GUI);
+                                    if(btn.keys.at(page) & (MOD_CTRL  << 4)) Keyboard.release(KEY_RIGHT_CTRL);
+                                    if(btn.keys.at(page) & (MOD_SHIFT << 4)) Keyboard.release(KEY_RIGHT_SHIFT);
+                                    if(btn.keys.at(page) & (MOD_ALT   << 4)) Keyboard.release(KEY_RIGHT_ALT);
+                                    if(btn.keys.at(page) & (MOD_META  << 4)) Keyboard.release(KEY_RIGHT_GUI);
+                                }
+
+                                if((btn.keys.at(page) & 0xFF) > LGB_PAGEKEYS)
+                                    Keyboard.release(btn.keys.at(page));
+                            }
                         }
 
                         // clear the debounced state and button is released
