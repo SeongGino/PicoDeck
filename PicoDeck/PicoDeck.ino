@@ -47,7 +47,7 @@ void setup()
     neopixel.begin();
     
     if(DeckCommon::Prefs->curPage < DeckCommon::pagesCount)
-        PixelUpdate(DeckCommon::Prefs->pages.at(DeckCommon::Prefs->curPage).color, 0, true);
+         PixelUpdate(DeckCommon::Prefs->pages.at(DeckCommon::Prefs->curPage).color, 0, true);
     else PixelUpdate(0, 0, 0, 0, true);
 }
 
@@ -93,15 +93,14 @@ void loop() {
     if(buttons.page != DeckCommon::Prefs->curPage) {
         DeckCommon::Prefs->curPage = buttons.page;
         rp2040.fifo.push(buttons.page | DISP_PAGE_UPDATE);
+        
         #ifdef SERIAL_DEBUG
         Serial.printf("Switched to page %d\n", DeckCommon::Prefs->curPage+1);
         #endif // SERIAL_DEBUG
-        switch(DeckCommon::Prefs->curPage) {
-            case 0: PixelUpdate(255, 0, 0, 0, true); break;
-            case 1: PixelUpdate(0, 255, 0, 0, true); break;
-            case 2: PixelUpdate(0, 0, 255, 0, true); break;
-            default: break;
-        }
+
+        if(DeckCommon::Prefs->curPage < DeckCommon::pagesCount)
+             PixelUpdate(DeckCommon::Prefs->pages.at(DeckCommon::Prefs->curPage).color, 0, true);
+        else PixelUpdate(0, 0, 0, 0, true);
         
         canSave = true;
         lastSaveChecked = millis();
