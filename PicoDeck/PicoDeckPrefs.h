@@ -50,6 +50,7 @@ public:
 
     /// @brief Pages metadata dynamic array
     /// @details Can be less than total available macro pages as defined in LightgunButtons::ButtonDesc
+    // TODO: colors could be enums instead (based on HTML color codes?)
     std::vector<Pages_t> pages = {
         {"Avatar Actions", 0x000000FF},
         {"Scenes", 0x0000FF00},
