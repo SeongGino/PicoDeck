@@ -259,7 +259,7 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap, const bool &isReleased)
 
         // invert btn bitmap to match state (if not already matching)
         // check top-leftmost pixel - on = pressed previously, off = wasn't pressed
-        if(btnsMap & (1 << b) && ((isReleased && keyBoxBitmaps[i][0]) || (!isReleased && !keyBoxBitmaps[i][0]))) {
+        if(btnsMap & (1 << b) && ((isReleased && (keyBoxBitmaps[i][0] & 1)) || (!isReleased && !(keyBoxBitmaps[i][0] & 1)))) {
             for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
                 keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
 
