@@ -9,7 +9,7 @@ Features:
  - Supports RP2040 and RP2350 chipsets
  - (Intended to) support SSD1306 and SH1106/07 monochrome OLEDs, displaying macro key bindings and customized page titles (if any)
  - Supports several pages of macros with different key combinations (one key + any eight modifier keys independent of the page) and custom lighting
- - Uses OF's debouncing for glitch-free input reading and queued processing
+ - Uses OF's debouncing for glitch-free input reading and queued processing, and Keyboard library with backbuffers for tracking stacked/overlapping keypresses.
  - Some basic multithreading, with inputs/NeoPixels handled on Core0 and display handled on Core1
  - Will probably not make you coffee
  - KUREAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
