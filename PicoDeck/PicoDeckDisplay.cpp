@@ -1,3 +1,6 @@
+#include "PicoDeckCommon.h"
+#include "PicoDeckPrefs.h"
+#include "blockImages.h"
 /*!
  * @file PicoDeckDisplay.cpp
  * @brief Wrapper interface for many OLED display drivers to render Macros interface.
@@ -259,18 +262,33 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap, const bool &isReleased)
 
         // invert btn bitmap to match state (if not already matching)
         // check top-leftmost pixel - on = pressed previously, off = wasn't pressed
-        if(btnsMap & (1 << b) && ((isReleased && (keyBoxBitmaps[i][0] & 1)) || (!isReleased && !(keyBoxBitmaps[i][0] & 1)))) {
-            for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
-                keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
+        if(btnsMap & (1 << b)) {
+            if(keyPics[b][DeckCommon::Prefs->curPage] != nullptr) {
+                if((isReleased && keyBoxBitmaps[i][0] != keyPics[b][DeckCommon::Prefs->curPage][0]) || (!isReleased && keyBoxBitmaps[i][0] == keyPics[b][DeckCommon::Prefs->curPage][0])) {
+                    for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
+                        keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
 
-            int xOffset = 32*x;
-            int yOffset = 16+(16*y);
+                    int xOffset = 32*x;
+                    int yOffset = 16+(16*y);
 
-            display->fillRect(xOffset, yOffset, keyBoxBuf.width(), keyBoxBuf.height(), BLACK);
-            display->drawBitmap(xOffset, yOffset, keyBoxBitmaps[i], keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
+                    display->fillRect(xOffset, yOffset, keyBoxBuf.width(), keyBoxBuf.height(), BLACK);
+                    display->drawBitmap(xOffset, yOffset, keyBoxBitmaps[i], keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
 
-            screenUpdated = true;
-        }   
+                    screenUpdated = true;
+                }
+            } else if(keyPicNullptrToText && ((isReleased && (keyBoxBitmaps[i][0] & 1)) || (!isReleased && !(keyBoxBitmaps[i][0] & 1)))) {
+                for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
+                    keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
+
+                int xOffset = 32*x;
+                int yOffset = 16+(16*y);
+
+                display->fillRect(xOffset, yOffset, keyBoxBuf.width(), keyBoxBuf.height(), BLACK);
+                display->drawBitmap(xOffset, yOffset, keyBoxBitmaps[i], keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
+
+                screenUpdated = true;
+            }
+        }
 
         ++i;
         // increment/loop around current row and column for next btn
@@ -316,14 +334,18 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
         keyBoxBuf.fillScreen(BLACK);
 
         if(LightgunButtons::ButtonDesc[b].keys.size() > page && LightgunButtons::ButtonDesc[b].keys.at(page)) {
-            if(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF00) {
-                keyBoxBuf.setCursor(3, SEGAFONT7_HEIGHT);
-                for(int k = 0; k < 8; ++k)
-                    if(LightgunButtons::ButtonDesc[b].keys.at(page) & (0x0100 << k)) keyBoxBuf.write((char)0x80+k);
-                
-                keyBoxBuf.setCursor(7, SEGAFONT7_HEIGHT+1+SEGAFONT7_HEIGHT);
-            } else keyBoxBuf.setCursor(4, 4+SEGAFONT7_HEIGHT);
-            keyBoxBuf.print(keyStrings[(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF)-0x20]);
+            if(keyPics[i][page] != nullptr) {
+                keyBoxBuf.drawBitmap(0, 0, keyPics[i][page], keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
+            } else if(keyPicNullptrToText) {
+                if(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF00) {
+                    keyBoxBuf.setCursor(3, SEGAFONT7_HEIGHT);
+                    for(int k = 0; k < 8; ++k)
+                        if(LightgunButtons::ButtonDesc[b].keys.at(page) & (0x0100 << k)) keyBoxBuf.write((char)0x80+k);
+                    
+                    keyBoxBuf.setCursor(7, SEGAFONT7_HEIGHT+1+SEGAFONT7_HEIGHT);
+                } else keyBoxBuf.setCursor(4, 4+SEGAFONT7_HEIGHT);
+                keyBoxBuf.print(keyStrings[(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF)-0x20]);
+            }
         }
 
         // copy finished canvas to this button's backbuffer

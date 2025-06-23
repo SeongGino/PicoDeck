@@ -1,3 +1,4 @@
+#include "LightgunButtons.h"
 /*!
  * @file PicoDeckDisplay.h
  * @brief Wrapper interface for many OLED display drivers to render Macros interface.
@@ -15,6 +16,7 @@
 #include "fontSega7x7.h"
 #include "PicoDeckDefines.h"
 #include "PicoDeckCommon.h"
+#include "blockImages.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -443,8 +445,31 @@ private:
     uint8_t topBannerBackupBitmap[((128+7) >> 3) * 15];
 
     // singleton canvas for keybox objects, and all-in-one buffer for all 12 available keys
-    GFXcanvas1 keyBoxBuf = GFXcanvas1(31, 16);
-    uint8_t keyBoxBitmaps[4*3][((31+7) >> 3) * 16];
+    #define OLED_KEY_BOX_WIDTH 31
+    #define OLED_KEY_BOX_HEIGHT 16
+    #define OLED_KEYS_COLUMNS 4
+    #define OLED_KEYS_ROWS 3
+    GFXcanvas1 keyBoxBuf = GFXcanvas1(OLED_KEY_BOX_WIDTH, OLED_KEY_BOX_HEIGHT);
+    uint8_t keyBoxBitmaps[OLED_KEYS_COLUMNS * OLED_KEYS_ROWS][((OLED_KEY_BOX_WIDTH+7) >> 3) * OLED_KEY_BOX_HEIGHT];
+
+    // array of keyboxes with a defined pixmap (else, fallback to font)
+    const uint8_t *keyPics[12][3] = {
+        {em_angy, nullptr, nullptr},
+        {em_happy, nullptr, nullptr},
+        {em_smug, nullptr, nullptr},
+        {icon_s_logo, nullptr, icon_rec},
+
+        {em_pout, nullptr, nullptr},
+        {em_norm, nullptr, nullptr},
+        {no_icon, nullptr, nullptr},
+        {icon_washed, nullptr, nullptr},
+
+        {em_think, nullptr, nullptr},
+        {em_sad, nullptr, nullptr},
+        {em_confuzz, nullptr, nullptr},
+        {icon_pos, nullptr, nullptr},
+    };
+    bool keyPicNullptrToText = true;
 
     // timestamps for periodic tasks in IdleOps()
     unsigned long idleTimestamp = 0;
