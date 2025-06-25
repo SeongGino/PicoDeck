@@ -1,4 +1,3 @@
-#include "LightgunButtons.h"
 /*!
  * @file PicoDeckDisplay.h
  * @brief Wrapper interface for many OLED display drivers to render Macros interface.
@@ -13,10 +12,10 @@
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_SH110X.h>
-#include "fontSega7x7.h"
+
 #include "PicoDeckDefines.h"
 #include "PicoDeckCommon.h"
-#include "blockImages.h"
+#include "fontSega7x7.h"
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -422,6 +421,9 @@ public:
     /// @details Used to check validity of whether a display is active or not
     Adafruit_MultiDisplay *display = nullptr;
 
+    // array of keyboxes with a defined pixmap (else, fallback to font)
+    DeckPrefs::KeyBM_t *keyPics[12][3];
+
 private:
     enum SavingTypes_e {
         SAVE_STARTED = 0,
@@ -452,24 +454,8 @@ private:
     GFXcanvas1 keyBoxBuf = GFXcanvas1(OLED_KEY_BOX_WIDTH, OLED_KEY_BOX_HEIGHT);
     uint8_t keyBoxBitmaps[OLED_KEYS_COLUMNS * OLED_KEYS_ROWS][((OLED_KEY_BOX_WIDTH+7) >> 3) * OLED_KEY_BOX_HEIGHT];
 
-    // array of keyboxes with a defined pixmap (else, fallback to font)
-    const uint8_t *keyPics[12][3] = {
-        {em_angy, nullptr, nullptr},
-        {em_happy, nullptr, nullptr},
-        {em_smug, nullptr, nullptr},
-        {icon_s_logo, nullptr, icon_rec},
-
-        {em_pout, nullptr, nullptr},
-        {em_norm, nullptr, nullptr},
-        {no_icon, nullptr, nullptr},
-        {icon_washed, nullptr, nullptr},
-
-        {em_think, nullptr, nullptr},
-        {em_sad, nullptr, nullptr},
-        {em_confuzz, nullptr, nullptr},
-        {icon_pos, nullptr, nullptr},
-    };
-    bool keyPicNullptrToText = true;
+    // marker of keys (with dual-stage pics) that have been last pressed
+    bool keyBoxesPushedStatus[12][3];
 
     // timestamps for periodic tasks in IdleOps()
     unsigned long idleTimestamp = 0;

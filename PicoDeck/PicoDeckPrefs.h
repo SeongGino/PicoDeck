@@ -11,9 +11,13 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+#include <unordered_map>
+#include <string_view>
 #include <FS.h>
 #include <LittleFS.h>
+
+#include "blockImages.h"
 
 class DeckPrefs
 {
@@ -57,7 +61,34 @@ public:
         {"System Apps", 0x00FF0000},
     };
 
+    typedef struct {
+        bool isPacked;
+        const uint8_t *ptr;
+    } KeyBM_t;
+
+    /// @brief Map of available pushkey bitmaps
+    /// @details Keys (effectively a filename) should be less than 16 characters
+    /// size should be
+    static inline std::unordered_map<std::string_view, KeyBM_t> bitmapsDB = {
+        {"none", {false, no_icon}},
+        {"rec", {true, icon_rec}},
+        {"em_norm", {false, em_norm}},
+        {"em_angy", {false, em_angy}},
+        {"em_sad", {false, em_sad}},
+        {"em_smug", {false, em_smug}},
+        {"em_happy", {false, em_happy}},
+        {"em_pout", {false, em_pout}},
+        {"em_confuzz", {false, em_confuzz}},
+        {"em_think", {false, em_think}},
+        {"s_logo", {false, icon_s_logo}},
+        {"dead", {false, icon_dead}},
+        {"washed", {false, icon_washed}},
+        {"pos_set", {false, icon_pos}},
+    };
+
     /// @brief Local copy of current hotkeys page from LightgunButtons
     /// @details If comparison to LGB's page value returns false, signals page change for LEDs/OLED
     int curPage = 0;
+
+    bool keyPicNullptrToText = true;
 };

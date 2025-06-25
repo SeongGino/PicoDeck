@@ -8,9 +8,10 @@
 
 #pragma once
 
-#include "PicoDeckPrefs.h"
 #include <LightgunButtons.h>
 #include <TinyUSB_Devices.h>
+
+#include "PicoDeckPrefs.h"
 
 class DeckCommon {
 public:

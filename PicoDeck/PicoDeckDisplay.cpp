@@ -1,6 +1,3 @@
-#include "PicoDeckCommon.h"
-#include "PicoDeckPrefs.h"
-#include "blockImages.h"
 /*!
  * @file PicoDeckDisplay.cpp
  * @brief Wrapper interface for many OLED display drivers to render Macros interface.
@@ -13,7 +10,6 @@
 #include <Wire.h>
 
 #include "PicoDeckDisplay.h"
-#include "PicoDeckDefines.h"
 
 bool DeckDisplay::Begin(const int &scl, const int &sda, const Adafruit_MultiDisplay::ScreenType_e &displayType)
 {
@@ -53,6 +49,7 @@ bool DeckDisplay::Begin(const int &scl, const int &sda, const Adafruit_MultiDisp
         // init backbufs
         memset(topBannerBackupBitmap, 0, sizeof(topBannerBackupBitmap));
         memset(keyBoxBitmaps, 0, sizeof(keyBoxBitmaps));
+        memset(keyBoxesPushedStatus, 0, sizeof(keyBoxesPushedStatus));
         topBannerBufMain.setTextWrap(false);
         topBannerBufSub.setTextWrap(false);
         keyBoxBuf.setFont(&Sega7x7);
@@ -263,8 +260,13 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap, const bool &isReleased)
         // invert btn bitmap to match state (if not already matching)
         // check top-leftmost pixel - on = pressed previously, off = wasn't pressed
         if(btnsMap & (1 << b)) {
-            if(keyPics[b][DeckCommon::Prefs->curPage] != nullptr) {
-                if((isReleased && keyBoxBitmaps[i][0] != keyPics[b][DeckCommon::Prefs->curPage][0]) || (!isReleased && keyBoxBitmaps[i][0] == keyPics[b][DeckCommon::Prefs->curPage][0])) {
+            if(keyPics[i][DeckCommon::Prefs->curPage] != nullptr) {
+                // flip perpetual status of this button's icon
+                if(!isReleased && keyPics[i][DeckCommon::Prefs->curPage]->isPacked)
+                    keyBoxesPushedStatus[i][DeckCommon::Prefs->curPage] = !keyBoxesPushedStatus[i][DeckCommon::Prefs->curPage];
+
+                if(( isReleased && keyBoxBitmaps[i][0] != keyPics[i][DeckCommon::Prefs->curPage]->ptr[0]) ||
+                   (!isReleased && keyBoxBitmaps[i][0] == keyPics[i][DeckCommon::Prefs->curPage]->ptr[0])) {
                     for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
                         keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
 
@@ -276,7 +278,21 @@ void DeckDisplay::ButtonsUpdate(const uint32_t &btnsMap, const bool &isReleased)
 
                     screenUpdated = true;
                 }
-            } else if(keyPicNullptrToText && ((isReleased && (keyBoxBitmaps[i][0] & 1)) || (!isReleased && !(keyBoxBitmaps[i][0] & 1)))) {
+
+                if(isReleased && keyPics[i][DeckCommon::Prefs->curPage]->isPacked) {
+                    if(  memcmp(keyBoxBitmaps[i], keyPics[i][DeckCommon::Prefs->curPage]->ptr,    sizeof(keyBoxBitmaps[0])))
+                         memcpy(keyBoxBitmaps[i], keyPics[i][DeckCommon::Prefs->curPage]->ptr,    sizeof(keyBoxBitmaps[0]));
+                    else memcpy(keyBoxBitmaps[i], keyPics[i][DeckCommon::Prefs->curPage]->ptr+64, sizeof(keyBoxBitmaps[0]));
+
+                    int xOffset = 32*x;
+                    int yOffset = 16+(16*y);
+
+                    display->fillRect(xOffset, yOffset, keyBoxBuf.width(), keyBoxBuf.height(), BLACK);
+                    display->drawBitmap(xOffset, yOffset, keyBoxBitmaps[i], keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
+
+                    screenUpdated = true;
+                }
+            } else if(DeckCommon::Prefs->keyPicNullptrToText && ((isReleased && (keyBoxBitmaps[i][0] & 1)) || (!isReleased && !(keyBoxBitmaps[i][0] & 1)))) {
                 for(int p = 0; p < (int)sizeof(keyBoxBitmaps[i]); ++p)
                     keyBoxBitmaps[i][p] = ~keyBoxBitmaps[i][p];
 
@@ -335,8 +351,8 @@ void DeckDisplay::PageUpdate(const uint32_t &page)
 
         if(LightgunButtons::ButtonDesc[b].keys.size() > page && LightgunButtons::ButtonDesc[b].keys.at(page)) {
             if(keyPics[i][page] != nullptr) {
-                keyBoxBuf.drawBitmap(0, 0, keyPics[i][page], keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
-            } else if(keyPicNullptrToText) {
+                keyBoxBuf.drawBitmap(0, 0, keyBoxesPushedStatus[i][page] ? keyPics[i][page]->ptr+64 : keyPics[i][page]->ptr, keyBoxBuf.width(), keyBoxBuf.height(), WHITE);
+            } else if(DeckCommon::Prefs->keyPicNullptrToText) {
                 if(LightgunButtons::ButtonDesc[b].keys.at(page) & 0xFF00) {
                     keyBoxBuf.setCursor(3, SEGAFONT7_HEIGHT);
                     for(int k = 0; k < 8; ++k)

@@ -1,12 +1,13 @@
 /*!
  * @file blockImages.h
- * @brief Small 31x16 graphics that can be used in PicoDeckDisplay to show graphical representations of button's intended functions.
+ * @brief Small 31x16 graphics that can be used in PicoDeckDisplay to show graphical representations of buttons' intended functions.
  *
  * @copyright That One Seong, 2025
  * @copyright GNU General Public License
  */
 
 #pragma once
+
 #include <cstdint>
 
 static constexpr uint8_t smiley_norm[] = {
@@ -169,7 +170,3 @@ static constexpr uint8_t icon_pos[] = {
     0x00, 0x0f, 0xe0, 0xe0, 0x04, 0x00, 0xc0, 0x40, 0x00, 0x00, 0x80, 0x40, 0x04, 0x00, 0x00, 0x40,
     0x0a, 0x00, 0x00, 0xe0, 0x00, 0x00, 0x01, 0xb0, 0x20, 0x80, 0x03, 0x18, 0x00, 0x00, 0x00, 0x00
 };
-
-/*
-
-*/

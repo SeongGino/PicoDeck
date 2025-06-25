@@ -11,10 +11,6 @@
 
 #pragma once
 
-#include "PicoDeckDefines.h"
-#include "PicoDeckCommon.h"
-#include "PicoDeckDisplay.h"
-
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
@@ -24,6 +20,9 @@
 #elif defined(CFG_TUSB_MCU)
 #error Incompatible USB stack. Use Adafruit TinyUSB.
 #endif
+
+#include "PicoDeckDefines.h"
+#include "PicoDeckDisplay.h"
 
 #define POLL_RATE 1
 #define SAVE_INTERVAL 1000

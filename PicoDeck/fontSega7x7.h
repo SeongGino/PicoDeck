@@ -1,4 +1,5 @@
 #pragma once
+
 #include <Adafruit_GFX.h>
 
 #define SEGAFONT7_HEIGHT 7

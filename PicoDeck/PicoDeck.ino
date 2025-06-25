@@ -42,6 +42,8 @@ void setup()
 
     DeckCommon::Prefs = new DeckPrefs();
     buttons.page = DeckCommon::Prefs->curPage;
+
+    // get Core1 (display) running
     rp2040.fifo.push(0);
 
     neopixel.begin();
@@ -60,6 +62,24 @@ void setup1()
     // (can happen due to bad pin mappings)
     Wire.setTimeout(100);
     Wire1.setTimeout(100);
+
+    // Unga bunga way of setting defaults
+    // Maybe someday this can be made more dynamic, preferably in PicoDeckPrefs (ha)
+    memset(OLED.keyPics, 0, sizeof(OLED.keyPics));
+    OLED.keyPics[0][0] = &DeckCommon::Prefs->bitmapsDB.at("em_angy");
+    OLED.keyPics[1][0] = &DeckCommon::Prefs->bitmapsDB.at("em_happy");
+    OLED.keyPics[2][0] = &DeckCommon::Prefs->bitmapsDB.at("em_smug");
+    OLED.keyPics[3][0] = &DeckCommon::Prefs->bitmapsDB.at("s_logo"); OLED.keyPics[3][2] = &DeckCommon::Prefs->bitmapsDB.at("rec");
+
+    OLED.keyPics[4][0] = &DeckCommon::Prefs->bitmapsDB.at("em_pout");
+    OLED.keyPics[5][0] = &DeckCommon::Prefs->bitmapsDB.at("em_norm");
+    OLED.keyPics[6][0] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[7][0] = &DeckCommon::Prefs->bitmapsDB.at("washed");
+
+    OLED.keyPics[8][0] = &DeckCommon::Prefs->bitmapsDB.at("em_think");
+    OLED.keyPics[9][0] = &DeckCommon::Prefs->bitmapsDB.at("em_sad");
+    OLED.keyPics[10][0] = &DeckCommon::Prefs->bitmapsDB.at("em_confuzz");
+    OLED.keyPics[11][0] = &DeckCommon::Prefs->bitmapsDB.at("pos_set");
 
     if(OLED.Begin(DISP_SCL, DISP_SDA, Adafruit_MultiDisplay::I2C_SSD1306) == false) {
         // Does this ever actually happen...?
