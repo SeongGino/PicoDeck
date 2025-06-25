@@ -155,15 +155,16 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
                         // state is low, button is pressed
 
                         if((btn.keys.at(0) & 0xFF) < LGB_PAGEKEYS) {
-                            Keyboard.releaseAll();
                             switch(btn.keys.at(0) & 0xFF) {
                             case LGB_PREV:
                                 if(page) --page;
                                 else if(pageWrap) page = pagesCount-1;
+                                Keyboard.releaseAll();
                                 break;
                             case LGB_NEXT:
                                 if(page < pagesCount-1) ++page;
                                 else if(pageWrap) page = 0;
+                                Keyboard.releaseAll();
                                 break;
                             default: break;
                             }

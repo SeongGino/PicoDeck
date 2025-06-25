@@ -38,7 +38,8 @@
 class LightgunButtons {
 public:
     enum SpecialFunctions_e {
-        LGB_PREV = 0,
+        LGB_UNMAPPED = 0,
+        LGB_PREV,
         LGB_NEXT,
         LGB_PAGEKEYS
     };
