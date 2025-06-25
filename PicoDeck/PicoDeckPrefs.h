@@ -96,5 +96,7 @@ public:
     /// @details If comparison to LGB's page value returns false, signals page change for LEDs/OLED
     int curPage = 0;
 
+    bool pagesWrapAround = true;
+
     bool keyPicNullptrToText = true;
 };

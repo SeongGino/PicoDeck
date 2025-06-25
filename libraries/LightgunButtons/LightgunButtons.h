@@ -142,6 +142,9 @@ public:
     /// @brief Max amount of unique btn map pages
     int pagesCount;
 
+    /// @brief Flag that determines if page navigation should wrap
+    bool pageWrap;
+
     /// @brief Test if pressed button(s) in comibination with already held buttons match given values.
     /// @details Test the pressed buttons equals a given value along with a modifer bit mask
     /// match with the debounced value.

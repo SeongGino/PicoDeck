@@ -42,6 +42,7 @@ void setup()
 
     DeckCommon::Prefs = new DeckPrefs();
     buttons.page = DeckCommon::Prefs->curPage;
+    buttons.pageWrap = DeckCommon::Prefs->pagesWrapAround;
 
     // get Core1 (display) running
     rp2040.fifo.push(0);

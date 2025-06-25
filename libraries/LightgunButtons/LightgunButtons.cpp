@@ -38,6 +38,7 @@ LightgunButtons::LightgunButtons(Data_t _data, unsigned int _count) :
     reportedPressed(0),
     count(_count),
     pagesCount(0),
+    pageWrap(0),
     stateFifo(_data.pArrFifo),
     debounceCount(_data.pArrDebounceCount)
 {
@@ -156,8 +157,14 @@ uint32_t LightgunButtons::Poll(unsigned long minTicks)
                         if((btn.keys.at(0) & 0xFF) < LGB_PAGEKEYS) {
                             Keyboard.releaseAll();
                             switch(btn.keys.at(0) & 0xFF) {
-                            case LGB_PREV: if(page) --page; break;
-                            case LGB_NEXT: if(page < pagesCount-1) ++page; break;
+                            case LGB_PREV:
+                                if(page) --page;
+                                else if(pageWrap) page = pagesCount-1;
+                                break;
+                            case LGB_NEXT:
+                                if(page < pagesCount-1) ++page;
+                                else if(pageWrap) page = 0;
+                                break;
                             default: break;
                             }
                         }
