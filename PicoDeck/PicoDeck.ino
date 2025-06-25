@@ -66,20 +66,20 @@ void setup1()
     // Unga bunga way of setting defaults
     // Maybe someday this can be made more dynamic, preferably in PicoDeckPrefs (ha)
     memset(OLED.keyPics, 0, sizeof(OLED.keyPics));
-    OLED.keyPics[0][0] = &DeckCommon::Prefs->bitmapsDB.at("em_angy");
-    OLED.keyPics[1][0] = &DeckCommon::Prefs->bitmapsDB.at("em_happy");
-    OLED.keyPics[2][0] = &DeckCommon::Prefs->bitmapsDB.at("em_smug");
-    OLED.keyPics[3][0] = &DeckCommon::Prefs->bitmapsDB.at("s_logo"); OLED.keyPics[3][2] = &DeckCommon::Prefs->bitmapsDB.at("rec");
+    OLED.keyPics[0][0] = &DeckCommon::Prefs->bitmapsDB.at("em_angy");       OLED.keyPics[0][1] = &DeckCommon::Prefs->bitmapsDB.at("scene_blank");
+    OLED.keyPics[1][0] = &DeckCommon::Prefs->bitmapsDB.at("em_happy");      OLED.keyPics[1][1] = &DeckCommon::Prefs->bitmapsDB.at("scene_brb");
+    OLED.keyPics[2][0] = &DeckCommon::Prefs->bitmapsDB.at("em_smug");       OLED.keyPics[2][1] = &DeckCommon::Prefs->bitmapsDB.at("scene_gaming");
+    OLED.keyPics[3][0] = &DeckCommon::Prefs->bitmapsDB.at("s_logo");        OLED.keyPics[3][1] = &DeckCommon::Prefs->bitmapsDB.at("washed");        OLED.keyPics[3][2] = &DeckCommon::Prefs->bitmapsDB.at("rec_start");
 
-    OLED.keyPics[4][0] = &DeckCommon::Prefs->bitmapsDB.at("em_pout");
-    OLED.keyPics[5][0] = &DeckCommon::Prefs->bitmapsDB.at("em_norm");
-    OLED.keyPics[6][0] = &DeckCommon::Prefs->bitmapsDB.at("none");
-    OLED.keyPics[7][0] = &DeckCommon::Prefs->bitmapsDB.at("washed");
+    OLED.keyPics[4][0] = &DeckCommon::Prefs->bitmapsDB.at("em_pout");       OLED.keyPics[4][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[5][0] = &DeckCommon::Prefs->bitmapsDB.at("em_norm");       OLED.keyPics[5][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[6][0] = &DeckCommon::Prefs->bitmapsDB.at("none");          OLED.keyPics[6][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[7][0] = &DeckCommon::Prefs->bitmapsDB.at("zoom");          OLED.keyPics[7][1] = &DeckCommon::Prefs->bitmapsDB.at("none");          OLED.keyPics[7][2] = &DeckCommon::Prefs->bitmapsDB.at("mic_toggle");
 
-    OLED.keyPics[8][0] = &DeckCommon::Prefs->bitmapsDB.at("em_think");
-    OLED.keyPics[9][0] = &DeckCommon::Prefs->bitmapsDB.at("em_sad");
-    OLED.keyPics[10][0] = &DeckCommon::Prefs->bitmapsDB.at("em_confuzz");
-    OLED.keyPics[11][0] = &DeckCommon::Prefs->bitmapsDB.at("pos_set");
+    OLED.keyPics[8][0] = &DeckCommon::Prefs->bitmapsDB.at("em_think");      OLED.keyPics[8][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[9][0] = &DeckCommon::Prefs->bitmapsDB.at("em_sad");        OLED.keyPics[9][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[10][0] = &DeckCommon::Prefs->bitmapsDB.at("em_confuzz");   OLED.keyPics[10][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[11][0] = &DeckCommon::Prefs->bitmapsDB.at("pos_set");      OLED.keyPics[11][1] = &DeckCommon::Prefs->bitmapsDB.at("none");         OLED.keyPics[11][2] = &DeckCommon::Prefs->bitmapsDB.at("rec_pause");
 
     if(OLED.Begin(DISP_SCL, DISP_SDA, Adafruit_MultiDisplay::I2C_SSD1306) == false) {
         // Does this ever actually happen...?
