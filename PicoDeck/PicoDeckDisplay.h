@@ -106,12 +106,13 @@ public:
     }
 
     // only SSD1306 has a predefined dim function (which sets contrast to 0x8F), with no public "set contrast" method
+    // SH1106 also seems to have virtually no range in contrast - 0x2F seems to have the same effect as 0x01
     void dim(const bool &dim) {
         switch(dispType) {
             case I2C_SSD1306:
                 display1306->dim(dim); break;
             case I2C_SH1106:
-                display1106->setContrast(dim ? 0x2F : 0xFF);
+                display1106->setContrast(dim ? 0x01 : 0xFF);
                 break;
             case I2C_SH1107:
                 display1107->setContrast(dim ? 0x2F : 0x4F);

@@ -73,16 +73,16 @@ void setup1()
     OLED.keyPics[3][0] = &DeckCommon::Prefs->bitmapsDB.at("s_logo");        OLED.keyPics[3][1] = &DeckCommon::Prefs->bitmapsDB.at("washed");        OLED.keyPics[3][2] = &DeckCommon::Prefs->bitmapsDB.at("rec_start");
 
     OLED.keyPics[4][0] = &DeckCommon::Prefs->bitmapsDB.at("em_pout");       OLED.keyPics[4][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
-    OLED.keyPics[5][0] = &DeckCommon::Prefs->bitmapsDB.at("em_norm");       OLED.keyPics[5][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
+    OLED.keyPics[5][0] = &DeckCommon::Prefs->bitmapsDB.at("em_norm");       OLED.keyPics[5][1] = &DeckCommon::Prefs->bitmapsDB.at("rallyx");
     OLED.keyPics[6][0] = &DeckCommon::Prefs->bitmapsDB.at("none");          OLED.keyPics[6][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
     OLED.keyPics[7][0] = &DeckCommon::Prefs->bitmapsDB.at("zoom");          OLED.keyPics[7][1] = &DeckCommon::Prefs->bitmapsDB.at("none");          OLED.keyPics[7][2] = &DeckCommon::Prefs->bitmapsDB.at("mic_toggle");
 
     OLED.keyPics[8][0] = &DeckCommon::Prefs->bitmapsDB.at("em_think");      OLED.keyPics[8][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
     OLED.keyPics[9][0] = &DeckCommon::Prefs->bitmapsDB.at("em_sad");        OLED.keyPics[9][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
     OLED.keyPics[10][0] = &DeckCommon::Prefs->bitmapsDB.at("em_confuzz");   OLED.keyPics[10][1] = &DeckCommon::Prefs->bitmapsDB.at("none");
-    OLED.keyPics[11][0] = &DeckCommon::Prefs->bitmapsDB.at("pos_set");      OLED.keyPics[11][1] = &DeckCommon::Prefs->bitmapsDB.at("none");         OLED.keyPics[11][2] = &DeckCommon::Prefs->bitmapsDB.at("rec_pause");
+    OLED.keyPics[11][0] = &DeckCommon::Prefs->bitmapsDB.at("pikohann");     OLED.keyPics[11][1] = &DeckCommon::Prefs->bitmapsDB.at("none");         OLED.keyPics[11][2] = &DeckCommon::Prefs->bitmapsDB.at("rec_pause");
 
-    if(OLED.Begin(DISP_SCL, DISP_SDA, Adafruit_MultiDisplay::I2C_SSD1306) == false) {
+    if(OLED.Begin(DISP_SCL, DISP_SDA, Adafruit_MultiDisplay::I2C_SH1106) == false) {
         // Does this ever actually happen...?
         #ifdef SERIAL_DEBUG
         Serial.println("Display init error!");
