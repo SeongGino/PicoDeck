@@ -47,10 +47,14 @@ public:
     // left side modifier enums
     // to use right side, shift by four bytes (<< 4)
     enum KeyModifiers_e {
-        MOD_CTRL = 1 << 8,
-        MOD_SHIFT = 1 << 9,
-        MOD_ALT = 1 << 10,
-        MOD_META = 1 << 11
+        MOD_LCTRL = 1 << 8,
+        MOD_LSHIFT = 1 << 9,
+        MOD_LALT = 1 << 10,
+        MOD_LMETA = 1 << 11,
+        MOD_RCTRL = MOD_LCTRL << 4,
+        MOD_RSHIFT = MOD_LSHIFT << 4,
+        MOD_RALT = MOD_LALT << 4,
+        MOD_RMETA = MOD_LMETA << 4
     };
 
     /// @brief Descriptor.
